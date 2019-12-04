@@ -1,9 +1,13 @@
-include_directories(gear/include)
-include_directories(memory_manager/include)
-include_directories(scheduler/include)
-include_directories(sequence/include)
-include_directories(setup/include)
-include_directories(checkers/include)
+file(GLOB cpu_prefix_sum "src/*cpp")
+
+include_directories(include)
+include_directories(${CMAKE_SOURCE_DIR}/main/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/gear/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/setup/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/memory_manager/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/scheduler/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/sequence/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/checkers/include)
 include_directories(${CMAKE_SOURCE_DIR}/main/include)
 include_directories(${CMAKE_SOURCE_DIR}/cuda/utils/prefix_sum/include)
 include_directories(${CMAKE_SOURCE_DIR}/cuda/utils/float_operations/include)
@@ -67,125 +71,6 @@ include_directories(${CMAKE_SOURCE_DIR}/cuda/vertex_fit/vertex_fitter/include)
 include_directories(${CMAKE_SOURCE_DIR}/cuda/selections/Hlt1/include)
 include_directories(${PROJECT_BINARY_DIR}/configuration/sequences)
 
-file(GLOB stream_gear "gear/src/*cpp")
-file(GLOB stream_memory_manager "memory_manager/src/*cpp")
-file(GLOB stream_scheduler "scheduler/src/*cpp")
-file(GLOB stream_sequence "sequence/src/*cpp")
-file(GLOB stream_sequence_cpp "sequence/src/*cpp")
-file(GLOB stream_setup "setup/src/*cpp")
-file(GLOB stream_visitors_gec "visitors/global_event_cut/src/*cu")
-file(GLOB stream_visitors_velo "visitors/velo/src/*cu")
-file(GLOB stream_visitors_patPV "visitors/patPV/src/*cu")
-file(GLOB stream_visitors_beamlinePV "visitors/beamlinePV/src/*cu")
-file(GLOB stream_visitors_assoc "visitors/associate/src/*cu")
-file(GLOB stream_visitors_UT "visitors/UT/src/*cu")
-file(GLOB stream_visitors_SciFi_decoding "visitors/SciFi/decoding/src/*cu")
-file(GLOB stream_visitors_SciFi_looking_forward "visitors/SciFi/looking_forward/src/*cu")
-file(GLOB stream_visitors_Muon "visitors/muon/src/*cu")
-file(GLOB stream_visitors_kalman "visitors/kalman/src/*cu")
-file(GLOB stream_visitors_vertex "visitors/vertex_fit/src/*cu")
-file(GLOB stream_visitors_selections "visitors/selections/src/*cu")
-file(GLOB stream_visitors_raw_banks "visitors/raw_banks/src/*cu")
-
-add_custom_command(
-    OUTPUT "${PROJECT_BINARY_DIR}/configuration/sequences/ConfiguredSequence.h"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/configuration/sequences/${SEQUENCE}.h" "${PROJECT_BINARY_DIR}/configuration/sequences/ConfiguredSequence.h"
-    DEPENDS "${CMAKE_SOURCE_DIR}/configuration/sequences/${SEQUENCE}.h"
+allen_add_library(CpuPrefixSum STATIC
+  ${cpu_prefix_sum}
 )
-
-message(STATUS "Configured sequence: " ${SEQUENCE})
-
-if(TARGET_DEVICE STREQUAL "CPU")
-  foreach(source_file ${stream_visitors_gec}
-    ${stream_visitors_ip} ${stream_visitors_velo} ${stream_visitors_patPV}
-    ${stream_visitors_beamlinePV} ${stream_visitors_assoc} ${stream_visitors_UT}
-    ${stream_visitors_SciFi_decoding} ${stream_visitors_SciFi_looking_forward}
-    ${stream_visitors_Muon} ${stream_visitors_kalman}
-    ${stream_visitors_vertex} ${stream_visitors_selections} ${stream_visitors_raw_banks})
-    set_source_files_properties(${source_file} PROPERTIES LANGUAGE CXX)
-  endforeach(source_file)
-endif()
-
-allen_add_library(Visitors STATIC
-  ${stream_visitors_gec}
-  ${stream_visitors_ip}
-  ${stream_visitors_velo}
-  ${stream_visitors_patPV}
-  ${stream_visitors_beamlinePV}
-  ${stream_visitors_assoc}
-  ${stream_visitors_UT}
-  ${stream_visitors_SciFi_decoding}
-  ${stream_visitors_SciFi_looking_forward}
-  ${stream_visitors_Muon}
-  ${stream_visitors_kalman}
-  ${stream_visitors_vertex}
-  ${stream_visitors_selections}
-  ${stream_visitors_raw_banks}
-)
-
-target_link_libraries(Visitors PRIVATE
-  CudaCommon
-  Associate
-  GlobalEventCut
-  Velo
-  AllenPatPV
-  PV_beamline
-  x86Clustering
-  UT
-  Kalman
-  VertexFitter
-  Hlt1
-  RawBanks
-  SciFi
-  CpuGEC
-  CpuUtils
-  Muon
-  Utils)
-
-# Avoid unused parameter warnings in Visitors
-if(TARGET_DEVICE STREQUAL "CUDA")
-  target_compile_options(Visitors PRIVATE "-Xcompiler=-Wno-unused-parameter")
-else()
-  target_compile_options(Visitors PRIVATE "-Wno-unused-parameter")
-endif()
-
-allen_add_library(Stream STATIC
-  "${PROJECT_BINARY_DIR}/configuration/sequences/ConfiguredSequence.h"
-  ${stream_gear}
-  ${stream_memory_manager}
-  ${stream_scheduler}
-  ${stream_sequence}
-  ${stream_sequence_cpp}
-  ${stream_setup}
-)
-
-target_link_libraries(Stream PRIVATE
-  CudaCommon
-  Associate
-  GlobalEventCut
-  Velo
-  AllenPatPV
-  PV_beamline
-  x86Clustering
-  CpuPrefixSum
-  UT
-  Kalman
-  VertexFitter
-  Hlt1
-  RawBanks
-  SciFi
-  CpuGEC
-  CpuUtils
-  Muon
-  Utils
-  Visitors)
-
-set_property(TARGET Stream PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-
-if (ROOT_FOUND)
-  target_compile_definitions(Stream PUBLIC ${ALLEN_ROOT_DEFINITIONS})
-
-  target_include_directories(Stream SYSTEM BEFORE PRIVATE
-    ${ROOT_INCLUDE_DIRS}
-  )
-endif()
