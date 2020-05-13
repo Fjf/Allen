@@ -1,12 +1,14 @@
-################################################################################
-# Package: Allen
-################################################################################
+file(GLOB host_prefix_sum "src/*cpp")
 
+include_directories(include)
 include_directories(${CMAKE_SOURCE_DIR}/main/include)
-include_directories(${CMAKE_SOURCE_DIR}/stream/sequence/include)
 include_directories(${CMAKE_SOURCE_DIR}/stream/gear/include)
 include_directories(${CMAKE_SOURCE_DIR}/stream/setup/include)
-include_directories(${CMAKE_SOURCE_DIR}/configuration/sequences)
+include_directories(${CMAKE_SOURCE_DIR}/stream/memory_manager/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/scheduler/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/sequence/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/checkers/include)
+include_directories(${CMAKE_SOURCE_DIR}/main/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/utils/prefix_sum/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/utils/float_operations/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/utils/sorting/include)
@@ -31,8 +33,6 @@ include_directories(${CMAKE_SOURCE_DIR}/device/velo/search_by_triplet/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/velo/simplified_kalman_filter/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/preprocessing/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/common/include)
-include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/classifiers/include)
-include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/utils/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/common/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/search_initial_windows/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/find_compatible_windows/include)
@@ -58,8 +58,9 @@ include_directories(${CMAKE_SOURCE_DIR}/device/PV/patPV/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/PV/common/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/raw_banks/include)
 include_directories(${CMAKE_SOURCE_DIR}/host/velo/clustering/include)
-include_directories(${CMAKE_SOURCE_DIR}/host/prefix_sum/include)
+include_directories(${CMAKE_SOURCE_DIR}/host/utils/prefix_sum/include)
 include_directories(${CMAKE_SOURCE_DIR}/host/global_event_cut/include)
+include_directories(${CMAKE_SOURCE_DIR}/host/prefix_sum/include)
 include_directories(${CMAKE_SOURCE_DIR}/checker/tracking/include)
 include_directories(${CMAKE_SOURCE_DIR}/checker/pv/include)
 include_directories(${CMAKE_SOURCE_DIR}/checker/selections/include)
@@ -68,41 +69,9 @@ include_directories(${CMAKE_SOURCE_DIR}/device/kalman/ParKalman/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/vertex_fit/common/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/vertex_fit/vertex_fitter/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/selections/Hlt1/include)
+include_directories(${PROJECT_BINARY_DIR}/configuration/sequences)
+include_directories(${CPPGSL_INCLUDE_DIR})
 
-gaudi_subdir(Allen v1r0)
-
-gaudi_depends_on_subdirs(Online/OnlineKernel
-                         Det/FTDet
-                         Det/VPDet
-                         UT/UTDAQ
-                         UT/UTKernel
-                         Event/FTEvent
-                         DAQ/DAQKernel
-                         Event/DAQEvent
-                         Event/DigiEvent
-                         GaudiAlg
-                         Pr/PrKernel
-                         Muon/MuonID)
-
-find_package(Boost REQUIRED)
-find_package(Rangev3 REQUIRED)
-find_package(cppgsl REQUIRED)
-find_package(Rangev3 REQUIRED)
-find_package(ZMQ REQUIRED)
-
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${CPPGSL_INCLUDE_DIR} ${RANGEV3_INCLUDE_DIR} ${GSL_INCLUDE_DIRS} "${PROJECT_BINARY_DIR}/configuration/sequences")
-
-gaudi_add_module(AllenWrapper
-                 src/*.cpp
-                 INCLUDE_DIRS Online/OnlineKernel
-                 LINK_LIBRARIES AllenLib DAQEventLib DAQKernelLib GaudiAlgLib
-                                PrKernel VPDetLib UTDetLib UTKernelLib
-                                FTDetLib)
-if(CMAKE_BUILD_TYPE STREQUAL Debug)
-  target_compile_definitions(AllenWrapper PRIVATE ALLEN_DEBUG)
-endif()
-target_compile_definitions(AllenWrapper PRIVATE ALLEN_DEBUG)
-
-if(TARGET_DEVICE STREQUAL "CPU" OR TARGET_DEVICE STREQUAL "CUDACLANG")
-  target_compile_definitions(AllenWrapper PRIVATE CPU)
-endif()
+allen_add_host_library(HostPrefixSum STATIC
+  ${host_prefix_sum}
+)
