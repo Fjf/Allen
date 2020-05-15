@@ -1,9 +1,14 @@
-include_directories(gear/include)
-include_directories(memory_manager/include)
-include_directories(scheduler/include)
-include_directories(sequence/include)
-include_directories(setup/include)
-include_directories(checkers/include)
+file(GLOB host_data_provider "src/*cpp")
+
+include_directories(include)
+include_directories(${CMAKE_SOURCE_DIR}/main/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/sequence/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/gear/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/setup/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/memory_manager/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/scheduler/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/sequence/include)
+include_directories(${CMAKE_SOURCE_DIR}/stream/checkers/include)
 include_directories(${CMAKE_SOURCE_DIR}/main/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/utils/prefix_sum/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/utils/float_operations/include)
@@ -13,8 +18,8 @@ include_directories(${CMAKE_SOURCE_DIR}/device/event_model/velo/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/event_model/common/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/event_model/UT/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/event_model/SciFi/include)
-include_directories(${CMAKE_SOURCE_DIR}/device/event_model/muon/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/event_model/associate/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/global_event_cut/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/UT/common/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/UT/UTDecoding/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/UT/sorting/include)
@@ -29,7 +34,18 @@ include_directories(${CMAKE_SOURCE_DIR}/device/velo/search_by_triplet/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/velo/simplified_kalman_filter/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/preprocessing/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/common/include)
-include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/common/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/search_initial_windows/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/find_compatible_windows/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/triplet_seeding/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/triplet_keep_best/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/extend_tracks_x/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/composite_algorithms/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/extend_tracks_first_layers_x/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/extend_tracks_uv/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/quality_filters/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/fit/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/looking_forward/calculate_parametrization/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/SciFi/consolidate/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/associate/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/muon/common/include)
@@ -37,7 +53,7 @@ include_directories(${CMAKE_SOURCE_DIR}/device/muon/preprocessing/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/muon/is_muon/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/muon/classification/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/muon/decoding/include)
-include_directories(${CMAKE_SOURCE_DIR}/device/muon/match_upstream_muon/include)
+include_directories(${CMAKE_SOURCE_DIR}/device/muon/decoding_steps/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/utils/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/PV/patPV/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/PV/common/include)
@@ -46,7 +62,6 @@ include_directories(${CMAKE_SOURCE_DIR}/host/velo/clustering/include)
 include_directories(${CMAKE_SOURCE_DIR}/host/utils/prefix_sum/include)
 include_directories(${CMAKE_SOURCE_DIR}/host/global_event_cut/include)
 include_directories(${CMAKE_SOURCE_DIR}/host/prefix_sum/include)
-include_directories(${CMAKE_SOURCE_DIR}/host/init_event_list/include)
 include_directories(${CMAKE_SOURCE_DIR}/checker/tracking/include)
 include_directories(${CMAKE_SOURCE_DIR}/checker/pv/include)
 include_directories(${CMAKE_SOURCE_DIR}/checker/selections/include)
@@ -55,61 +70,11 @@ include_directories(${CMAKE_SOURCE_DIR}/device/kalman/ParKalman/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/vertex_fit/common/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/vertex_fit/vertex_fitter/include)
 include_directories(${CMAKE_SOURCE_DIR}/device/selections/Hlt1/include)
-include_directories(${CMAKE_SOURCE_DIR}/device/selections/Postscale/include)
-include_directories(${CMAKE_SOURCE_DIR}/mdf/include)
+include_directories(${CMAKE_SOURCE_DIR}/external)
 include_directories(${PROJECT_BINARY_DIR}/configuration/sequences)
 include_directories(${CPPGSL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 
-if (NOT GaudiProject_FOUND)
-  include_directories(${CMAKE_SOURCE_DIR}/mdf/lhcb)
-endif()
-
-file(GLOB stream_gear "gear/src/*cpp")
-file(GLOB stream_sequence_cpp "sequence/src/*cpp")
-file(GLOB stream_sequence "sequence/src/*cu")
-
-include(GenerateConfiguration)
-
-allen_add_host_library(HostStream STATIC ${stream_gear} ${stream_sequence_cpp})
-
-allen_add_device_library(Stream STATIC ${stream_sequence})
-
-target_include_directories(Stream INTERFACE "${PROJECT_BINARY_DIR}/configuration/sequences")
-
-# Depend of Sequence.json instead of configuration/sequences/ConfiguredSequence.h.
-# By doing this, if the ${SEQUENCE}.py changes, a re-configuration will be triggered.
-# The json will always be updated, satisfying the dependence and not triggering a re-configuration
-# until the ${SEQUENCE}.py changes again.
-# However, since the Sequence.h is only copied *if different*, this will not necessarily trigger a re-compilation.
-# In other words, the timestamp of Sequence.json is used to keep up with that of ${SEQUENCE}.py.
-add_custom_target(configured_sequence DEPENDS "${PROJECT_BINARY_DIR}/Sequence.json")
-add_dependencies(Stream configured_sequence)
-
-target_link_libraries(Stream PRIVATE
-  HostStream
-  CudaCommon
-  Associate
-  Velo
-  AllenPatPV
-  PV_beamline
-  HostClustering
-  HostPrefixSum
-  UT
-  Kalman
-  VertexFitter
-  RawBanks
-  Selections
-  SciFi
-  HostGEC
-  Muon
-  Utils
-  Saxpy
-  HostDataProvider)
-
-if (ROOT_FOUND)
-  target_compile_definitions(Stream PUBLIC ${ALLEN_ROOT_DEFINITIONS})
-  target_include_directories(Stream SYSTEM BEFORE PRIVATE
-    ${ROOT_INCLUDE_DIRS}
-  )
-endif()
+allen_add_host_library(HostDataProvider STATIC
+  ${host_data_provider}
+)
