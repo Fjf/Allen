@@ -1,10 +1,10 @@
 /*****************************************************************************\
 * (c) Copyright 2020 CERN for the benefit of the LHCb Collaboration           *
 \*****************************************************************************/
-#include "HostForwardValidator.h"
+#include "HostMuonValidator.h"
 #include "PrepareTracks.h"
 
-void host_forward_validator::host_forward_validator_t::operator()(
+void host_muon_validator::host_muon_validator_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions& runtime_options,
   const Constants& constants,
@@ -27,6 +27,7 @@ void host_forward_validator::host_forward_validator_t::operator()(
   const auto scifi_track_ut_indices = make_vector<dev_scifi_track_ut_indices_t>(arguments);
   const auto scifi_qop = make_vector<dev_scifi_qop_t>(arguments);
   const auto scifi_states = make_vector<dev_scifi_states_t>(arguments);
+  const auto is_muon = make_vector<dev_is_muon_t>(arguments);
 
   const auto tracks = prepareForwardTracks(
     first<host_number_of_events_t>(arguments),
@@ -46,8 +47,9 @@ void host_forward_validator::host_forward_validator_t::operator()(
     scifi_qop,
     scifi_states,
     constants.host_scifi_geometry.data(),
-    event_list);
+    event_list,
+    is_muon);
 
-  auto& checker = runtime_options.checker_invoker->checker<TrackCheckerForward>(name(), property<root_output_filename_t>());
+  auto& checker = runtime_options.checker_invoker->checker<TrackCheckerMuon>(name(), property<root_output_filename_t>());
   checker.accumulate(first<host_mc_events_t>(arguments), tracks, event_list);
 }
