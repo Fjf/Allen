@@ -8,7 +8,7 @@
 * granted to it by virtue of its status as an Intergovernmental Organization  *
 * or submit itself to any jurisdiction.                                       *
 \*****************************************************************************/
-#include "RICH1Line.cuh"
+#include "RICH2Line.cuh"
 #include <ROOTHeaders.h>
 #include <ROOTService.h>
 #include <random>
@@ -22,54 +22,53 @@ __device__ __host__ KalmanFloat trackPhi(const ParKalmanFilter::FittedTrack& tra
 }
 
 // Explicit instantiation of the line
-INSTANTIATE_LINE(rich_1_line::rich_1_line_t, rich_1_line::Parameters)
+INSTANTIATE_LINE(rich_2_line::rich_2_line_t, rich_2_line::Parameters)
 
-void rich_1_line::rich_1_line_t::set_arguments_size(
+void rich_2_line::rich_2_line_t::set_arguments_size(
   ArgumentReferences<Parameters> arguments,
   const RuntimeOptions&,
   const Constants&,
   const HostBuffers&) const
 {
-  set_size<typename Parameters::dev_decisions_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_decisions_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
   set_size<typename Parameters::dev_decisions_offsets_t>(
     arguments, first<typename Parameters::host_number_of_events_t>(arguments));
   set_size<typename Parameters::host_post_scaler_t>(arguments, 1);
   set_size<typename Parameters::host_post_scaler_hash_t>(arguments, 1);
   set_size<typename Parameters::host_lhcbid_container_t>(arguments, 1);
-  set_size<typename Parameters::dev_selected_events_t>(
-    arguments, first<typename Parameters::host_number_of_events_t>(arguments));
+  set_size<typename Parameters::dev_selected_events_t>(arguments, 1);
   set_size<typename Parameters::dev_selected_events_size_t>(arguments, 1);
   set_size<typename Parameters::host_selected_events_size_t>(arguments, 1);
 
-  set_size<typename Parameters::dev_decision_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
-  set_size<typename Parameters::host_decision_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_decision_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::host_decision_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 
-  set_size<typename Parameters::dev_pt_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
-  set_size<typename Parameters::host_pt_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_pt_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::host_pt_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 
-  set_size<typename Parameters::dev_p_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
-  set_size<typename Parameters::host_p_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_p_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::host_p_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 
-  set_size<typename Parameters::dev_track_chi2_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_track_chi2_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
   set_size<typename Parameters::host_track_chi2_t>(
-    arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+    arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 
-  // set_size<typename Parameters::dev_ip_chi2_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  // set_size<typename Parameters::dev_ip_chi2_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
   // set_size<typename Parameters::host_ip_chi2_t>(arguments,
-  // rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  // rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 
-  set_size<typename Parameters::dev_eta_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
-  set_size<typename Parameters::host_eta_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_eta_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::host_eta_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 
-  set_size<typename Parameters::dev_phi_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
-  set_size<typename Parameters::host_phi_t>(arguments, rich_1_line::rich_1_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::dev_phi_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
+  set_size<typename Parameters::host_phi_t>(arguments, rich_2_line::rich_2_line_t::get_decisions_size(arguments));
 }
 
 #ifdef WITH_ROOT
 /*
  * Documented in ExampleOneTrackLine.cuh
  */
-void rich_1_line::rich_1_line_t::init_monitor(
+void rich_2_line::rich_2_line_t::init_monitor(
   const ArgumentReferences<Parameters>& arguments,
   const Allen::Context& context)
 {
@@ -85,7 +84,7 @@ void rich_1_line::rich_1_line_t::init_monitor(
 /*
  * Documented in ExampleOneTrackLine.cuh
  */
-__device__ void rich_1_line::rich_1_line_t::monitor(
+__device__ void rich_2_line::rich_2_line_t::monitor(
   const Parameters& parameters,
   std::tuple<const ParKalmanFilter::FittedTrack&> input,
   unsigned index,
@@ -106,7 +105,7 @@ __device__ void rich_1_line::rich_1_line_t::monitor(
 /*
  * Documented in ExampleOneTrackLine.cuh
  */
-void rich_1_line::rich_1_line_t::output_monitor(
+void rich_2_line::rich_2_line_t::output_monitor(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions& runtime_options,
   const Allen::Context& context) const
@@ -126,7 +125,7 @@ void rich_1_line::rich_1_line_t::output_monitor(
 
   auto handler = runtime_options.root_service->handle();
 
-  handler.file("rich1_align_monitor.root");
+  handler.file("rich2_align_monitor.root");
 
   auto tree = handler.ttree(name_ttree.c_str());
 
@@ -181,7 +180,7 @@ void rich_1_line::rich_1_line_t::output_monitor(
 }
 #endif
 
-__device__ bool rich_1_line::rich_1_line_t::passes(
+__device__ bool rich_2_line::rich_2_line_t::passes(
   const ParKalmanFilter::FittedTrack& track,
   const Parameters& parameters)
 {
@@ -214,7 +213,7 @@ __device__ bool rich_1_line::rich_1_line_t::passes(
   return false;
 }
 
-__device__ bool rich_1_line::rich_1_line_t::select(
+__device__ bool rich_2_line::rich_2_line_t::select(
   const Parameters& parameters,
   std::tuple<const ParKalmanFilter::FittedTrack&> input)
 {
