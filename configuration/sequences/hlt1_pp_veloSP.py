@@ -6,7 +6,6 @@ from AllenConf.velo_reconstruction import decode_velo
 from AllenCore.generator import generate
 from AllenConf.scifi_reconstruction import decode_scifi
 
-with decode_scifi.bind(raw_bank_version="v6"),\
-     decode_velo.bind(retina_decoding=False):
+with decode_velo.bind(retina_decoding=False):
     hlt1_node = setup_hlt1_node()
 generate(hlt1_node)
