@@ -17,17 +17,20 @@ ecal_clusters = reconstructed_objects["ecal_clusters"]
 calo_digits_line = line_maker(
     make_calo_digits_minADC_line(decode_calo(), name="Hlt1CaloDigitsMinADC", minADC=100))
 
-line_algorithms = [calo_digits_line[0]]
+calo_cluster_line = line_maker(
+    make_single_calo_cluster_line(ecal_clusters, name="Hlt1SingleCaloCluster"))
+
+line_algorithms = [calo_cluster_line[0], calo_digits_line[0]]
 
 global_decision = make_global_decision(lines=line_algorithms)
 
 lines = CompositeNode(
-    "AllLines", [calo_digits_line[1]],
+    "AllLines", [calo_cluster_line[1], calo_digits_line[1]],
     NodeLogic.NONLAZY_OR,
     force_order=False)
 
 calo_sequence = CompositeNode(
-    "Calo",
+    "CaloClustering",
     [lines, global_decision,
      rate_validation(lines=line_algorithms)],
     NodeLogic.NONLAZY_AND,
