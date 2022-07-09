@@ -3,27 +3,26 @@
 \*****************************************************************************/
 #pragma once
 
-#include "SciFiEventModel.cuh"
-#include "SciFiConsolidated.cuh"
+#include "VeloEventModel.cuh"
+#include "UTDefinitions.cuh"
 #include "SciFiDefinitions.cuh"
-#include "States.cuh"
+#include "SciFiEventModel.cuh"
+#include "TrackMatchingConstants.cuh"
 #include "AlgorithmTypes.cuh"
-#include "LookingForwardConstants.cuh"
 
-namespace scifi_copy_track_hit_number {
+namespace matching_copy_track_hit_number {
   struct Parameters {
     HOST_INPUT(host_number_of_events_t, unsigned) host_number_of_events;
-    HOST_INPUT(host_number_of_reconstructed_scifi_tracks_t, unsigned) host_number_of_reconstructed_scifi_tracks;
-    DEVICE_INPUT(dev_offsets_input_tracks_t, unsigned) dev_atomics_input;
-    DEVICE_INPUT(dev_scifi_tracks_t, SciFi::TrackHits) dev_scifi_tracks;
-    DEVICE_INPUT(dev_offsets_long_tracks_t, unsigned) dev_atomics_scifi;
-    DEVICE_OUTPUT(dev_scifi_track_hit_number_t, unsigned) dev_scifi_track_hit_number;
+    HOST_INPUT(host_number_of_reconstructed_matched_tracks_t, unsigned) host_number_of_reconstructed_matched_tracks;
+    DEVICE_INPUT(dev_matched_tracks_t, SciFi::MatchedTrack) dev_matched_tracks;
+    DEVICE_INPUT(dev_offsets_matched_tracks_t, unsigned) dev_atomics_matched;
+
+    DEVICE_OUTPUT(dev_matched_track_hit_number_t, unsigned) dev_matched_track_hit_number;
     PROPERTY(block_dim_t, "block_dim", "block dimensions", DeviceDimensions) block_dim;
   };
+  __global__ void matching_copy_track_hit_number(Parameters);
 
-  __global__ void scifi_copy_track_hit_number(Parameters);
-
-  struct scifi_copy_track_hit_number_t : public DeviceAlgorithm, Parameters {
+  struct matching_copy_track_hit_number_t : public DeviceAlgorithm, Parameters {
     void set_arguments_size(
       ArgumentReferences<Parameters> arguments,
       const RuntimeOptions&,
@@ -40,4 +39,4 @@ namespace scifi_copy_track_hit_number {
   private:
     Property<block_dim_t> m_block_dim {this, {{512, 1, 1}}};
   };
-} // namespace scifi_copy_track_hit_number
+} // namespace matching_copy_track_hit_number
