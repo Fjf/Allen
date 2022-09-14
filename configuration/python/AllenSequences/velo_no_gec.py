@@ -7,8 +7,6 @@ from PyConf.control_flow import NodeLogic, CompositeNode
 from AllenCore.generator import generate
 
 velo_tracking_sequence = CompositeNode(
-    "VeloTrackingWithGEC", [make_gec("gec"), velo_tracking()],
-    NodeLogic.LAZY_AND,
-    force_order=True)
+    "VeloTracking", [velo_tracking()], NodeLogic.LAZY_AND, force_order=True)
 
 generate(velo_tracking_sequence)
