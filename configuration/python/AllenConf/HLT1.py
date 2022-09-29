@@ -424,12 +424,14 @@ def setup_hlt1_node(enablePhysics=True,
     lumiline_name = "Hlt1ODINLumi"
     with line_maker.bind(prefilter=odin_err_filter):
         monitoring_lines = event_monitoring_lines(with_lumi, lumiline_name)
-        physics_lines += [line_maker(make_passthrough_line())]
+        physics_lines += [line_maker(make_passthrough_line(pre_scaler=0.04))]
 
     if EnableGEC:
         with line_maker.bind(prefilter=prefilters):
             physics_lines += [
-                line_maker(make_passthrough_line(name="Hlt1GECPassthrough"))
+                line_maker(
+                    make_passthrough_line(
+                        name="Hlt1GECPassthrough", pre_scaler=0.04))
             ]
 
     if enableBGI:

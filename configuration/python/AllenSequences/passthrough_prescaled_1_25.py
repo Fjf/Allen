@@ -31,7 +31,8 @@ lines = CompositeNode(
 
 passthrough_sequence = CompositeNode(
     "Passthrough", [
-        providers, lines, make_routingbits_writer(lines=line_algorithms), global_decision,
+        providers, lines,
+        make_routingbits_writer(lines=line_algorithms), global_decision,
         rate_validation(lines=line_algorithms)
     ],
     NodeLogic.NONLAZY_AND,

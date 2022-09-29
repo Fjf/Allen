@@ -10,8 +10,7 @@ from AllenConf.utils import line_maker
 from AllenConf.validators import rate_validation
 
 with decode_velo.bind(retina_decoding=False):
-    velo_tracking_sequence = CompositeNode(
-        "VeloTrackingSP", [velo_tracking()])
+    velo_tracking_sequence = CompositeNode("VeloTrackingSP", [velo_tracking()])
 
 passthrough_line = line_maker(make_passthrough_line(pre_scaler=0.04))
 line_algorithms = [passthrough_line[0]]
@@ -23,10 +22,12 @@ lines = CompositeNode(
 
 with decode_velo.bind(retina_decoding=False):
     velo_tracking_sequence = CompositeNode(
-    "VeloTrackingSP", [velo_tracking(), lines, 
-    make_routingbits_writer(lines=line_algorithms), 
-    global_decision, rate_validation(lines=line_algorithms)],
-    NodeLogic.NONLAZY_AND,
-    force_order=True)
+        "VeloTrackingSP", [
+            velo_tracking(), lines,
+            make_routingbits_writer(lines=line_algorithms), global_decision,
+            rate_validation(lines=line_algorithms)
+        ],
+        NodeLogic.NONLAZY_AND,
+        force_order=True)
 
 generate(velo_tracking_sequence)
