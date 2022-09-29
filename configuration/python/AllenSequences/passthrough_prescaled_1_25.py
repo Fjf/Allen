@@ -4,9 +4,9 @@
 from PyConf.control_flow import NodeLogic, CompositeNode
 from AllenCore.generator import generate, make_algorithm
 from AllenConf.hlt1_calibration_lines import make_passthrough_line
-from AllenConf.persistency import make_global_decision
+from AllenConf.persistency import make_global_decision, make_routingbits_writer
 from AllenConf.odin import decode_odin
-from AllenCore.algorithms import data_provider_t
+from AllenAlgorithms.algorithms import data_provider_t
 from AllenConf.utils import line_maker
 from AllenConf.validators import rate_validation
 
@@ -18,7 +18,7 @@ for det, bt in (("velo", "VP"), ("ut", "UT"), ("scifi", "FTCluster"),
     bank_providers.append(
         make_algorithm(data_provider_t, name=det + "_banks", bank_type=bt))
 
-passthrough_line = line_maker(make_passthrough_line())
+passthrough_line = line_maker(make_passthrough_line(pre_scaler=0.04))
 line_algorithms = [passthrough_line[0]]
 
 global_decision = make_global_decision(lines=line_algorithms)
@@ -31,7 +31,7 @@ lines = CompositeNode(
 
 passthrough_sequence = CompositeNode(
     "Passthrough", [
-        providers, lines, global_decision,
+        providers, lines, make_routingbits_writer(lines=line_algorithms), global_decision,
         rate_validation(lines=line_algorithms)
     ],
     NodeLogic.NONLAZY_AND,
