@@ -10,17 +10,27 @@
 ###############################################################################
 file(GLOB calo_decoding "decoding/src/*cu")
 file(GLOB calo_clustering "clustering/src/*cu")
+file(GLOB calo_clustering_cpp "clustering/src/*cpp")
 file(GLOB tools "tools/src/*cu")
 
+allen_add_device_library(CaloHost STATIC
+  ${calo_clustering_cpp}
+)
 allen_add_device_library(Calo STATIC
   ${calo_decoding}
   ${calo_clustering}
   ${tools}
 )
 
-target_link_libraries(Calo PRIVATE AllenCommon Backend HostEventModel EventModel)
+target_link_libraries(CaloHost PRIVATE AllenCommon Backend HostEventModel EventModel)
+target_link_libraries(Calo PRIVATE AllenCommon Backend HostEventModel EventModel CaloHost)
 
 target_include_directories(Calo PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/decoding/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/clustering/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tools/include>)
+
+target_include_directories(CaloHost PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/decoding/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/clustering/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tools/include>)

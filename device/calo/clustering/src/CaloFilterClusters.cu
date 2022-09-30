@@ -18,6 +18,12 @@ void calo_filter_clusters::calo_filter_clusters_t::set_arguments_size(
   set_size<dev_cluster2_idx_t>(arguments, Calo::Constants::max_ndiclusters * n_events);
   set_size<dev_cluster_prefilter_result_t>(arguments, first<host_ecal_number_of_clusters_t>(arguments));
 }
+void calo_filter_clusters::calo_filter_clusters_t::init()
+{
+#ifndef ALLEN_STANDALONE
+  calo_filter_clusters::calo_filter_clusters_t::init_monitor();
+#endif
+}
 
 void calo_filter_clusters::calo_filter_clusters_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
@@ -33,6 +39,16 @@ void calo_filter_clusters::calo_filter_clusters_t::operator()(
 
   global_function(filter_clusters)(dim3(size<dev_event_list_t>(arguments)), property<block_dim_filter_t>(), context)(
     arguments);
+
+#ifndef ALLEN_STANDALONE
+  // Monitoring
+  auto host_calo_offsets =
+    make_host_buffer<unsigned>(arguments, size<dev_ecal_cluster_offsets_t>(arguments));
+  Allen::copy_async(
+    host_calo_offsets.get(), get<dev_ecal_cluster_offsets_t>(arguments), context, Allen::memcpyDeviceToHost);
+  Allen::synchronize(context);
+  monitor_operator(arguments, host_calo_offsets);
+#endif
 }
 
 __global__ void calo_filter_clusters::prefilter_clusters(calo_filter_clusters::Parameters parameters)
