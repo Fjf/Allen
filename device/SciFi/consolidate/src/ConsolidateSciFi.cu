@@ -112,6 +112,14 @@ void scifi_consolidate_tracks::scifi_consolidate_tracks_t::set_arguments_size(
   set_size<dev_multi_event_long_tracks_ptr_t>(arguments, 1);
 }
 
+void scifi_consolidate_tracks::scifi_consolidate_tracks_t::init()
+{
+#ifndef ALLEN_STANDALONE
+  scifi_consolidate_tracks::scifi_consolidate_tracks_t::init_monitor();
+#endif
+}
+
+
 void scifi_consolidate_tracks::scifi_consolidate_tracks_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
@@ -126,6 +134,16 @@ void scifi_consolidate_tracks::scifi_consolidate_tracks_t::operator()(
     arguments, constants.dev_looking_forward_constants, constants.dev_magnet_polarity.data());
 
   global_function(create_scifi_views)(first<host_number_of_events_t>(arguments), 256, context)(arguments);
+  
+#ifndef ALLEN_STANDALONE
+  // Monitoring
+  auto host_track_offsets =
+    make_host_buffer<unsigned>(arguments, size<dev_offsets_long_tracks_t>(arguments));
+  Allen::copy_async(
+    host_track_offsets.get(), get<dev_offsets_long_tracks_t>(arguments), context, Allen::memcpyDeviceToHost);
+  Allen::synchronize(context);
+  monitor_operator(arguments, host_track_offsets);
+#endif
 }
 
 template<typename F>

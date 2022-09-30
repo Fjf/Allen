@@ -56,6 +56,13 @@ void seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::set_argum
   set_size<dev_scifi_multi_event_tracks_view_t>(arguments, 1);
 }
 
+void seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::init()
+{
+#ifndef ALLEN_STANDALONE
+  seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::init_monitor();
+#endif
+}
+
 //===========================================================================================
 // Calculate momentum, given T state only, adapted from
 // https://gitlab.cern.ch/lhcb/Rec/-/blob/master/Tr/TrackTools/src/FastMomentumEstimate.cpp
@@ -102,6 +109,16 @@ void seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::operator(
     arguments, constants.dev_magnet_polarity.data());
 
   global_function(create_scifi_views)(first<host_number_of_events_t>(arguments), 256, context)(arguments);
+  
+#ifndef ALLEN_STANDALONE
+  // Monitoring
+  auto host_track_offsets =
+    make_host_buffer<unsigned>(arguments, size<dev_offsets_seeding_tracks_t>(arguments));
+  Allen::copy_async(
+    host_track_offsets.get(), get<dev_offsets_seeding_tracks_t>(arguments), context, Allen::memcpyDeviceToHost);
+  Allen::synchronize(context);
+  monitor_operator(arguments, host_track_offsets);
+#endif
 }
 
 template<typename F>

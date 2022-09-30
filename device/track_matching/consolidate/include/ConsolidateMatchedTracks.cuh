@@ -13,6 +13,9 @@
 #include "SciFiConsolidated.cuh"
 #include "TrackMatchingConstants.cuh"
 #include "AlgorithmTypes.cuh"
+#ifndef ALLEN_STANDALONE
+#include "Gaudi/Accumulators.h"
+#endif
 
 namespace matching_consolidate_tracks {
   struct Parameters {
@@ -63,6 +66,8 @@ namespace matching_consolidate_tracks {
   __global__ void matching_consolidate_tracks(Parameters);
 
   struct matching_consolidate_tracks_t : public DeviceAlgorithm, Parameters {
+    void init();
+
     void set_arguments_size(
       ArgumentReferences<Parameters> arguments,
       const RuntimeOptions&,
@@ -78,5 +83,15 @@ namespace matching_consolidate_tracks {
 
   private:
     Property<block_dim_t> m_block_dim {this, {{256, 1, 1}}};
+
+#ifndef ALLEN_STANDALONE
+  public:
+    void init_monitor();
+
+    void monitor_operator(const ArgumentReferences<Parameters>& arguments, gsl::span<unsigned>) const;
+
+  private:
+    mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_long_tracks;
+#endif
   };
 } // namespace matching_consolidate_tracks

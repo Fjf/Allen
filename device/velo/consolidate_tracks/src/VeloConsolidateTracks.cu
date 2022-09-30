@@ -64,6 +64,13 @@ void velo_consolidate_tracks::velo_consolidate_tracks_t::set_arguments_size(
   set_size<dev_imec_velo_tracks_t>(arguments, 1);
 }
 
+void velo_consolidate_tracks::velo_consolidate_tracks_t::init()
+{
+#ifndef ALLEN_STANDALONE
+  velo_consolidate_tracks::velo_consolidate_tracks_t::init_monitor();
+#endif
+}
+
 void velo_consolidate_tracks::velo_consolidate_tracks_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
@@ -82,6 +89,16 @@ void velo_consolidate_tracks::velo_consolidate_tracks_t::operator()(
     arguments);
 
   global_function(create_velo_views)(first<host_number_of_events_t>(arguments), 256, context)(arguments);
+
+#ifndef ALLEN_STANDALONE
+  // Monitoring
+  auto host_track_offsets =
+    make_host_buffer<unsigned>(arguments, size<dev_offsets_all_velo_tracks_t>(arguments));
+  Allen::copy_async(
+    host_track_offsets.get(), get<dev_offsets_all_velo_tracks_t>(arguments), context, Allen::memcpyDeviceToHost);
+  Allen::synchronize(context);
+  monitor_operator(arguments, host_track_offsets);
+#endif
 }
 
 template<typename F>
@@ -107,7 +124,6 @@ __global__ void velo_consolidate_tracks::velo_consolidate_tracks(velo_consolidat
                                           event_number,
                                           number_of_events};
   const unsigned event_total_number_of_tracks = velo_tracks.number_of_tracks(event_number);
-
   const auto event_number_of_three_hit_tracks_filtered =
     parameters.dev_offsets_number_of_three_hit_tracks_filtered[event_number + 1] -
     parameters.dev_offsets_number_of_three_hit_tracks_filtered[event_number];

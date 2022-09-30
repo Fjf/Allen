@@ -7,6 +7,7 @@ file(GLOB velo_retinaclusters_sources "retinacluster_decoding/src/*cu")
 file(GLOB velo_search_by_triplet "search_by_triplet/src/*cu")
 file(GLOB velo_simplified_kalman_filter "simplified_kalman_filter/src/*cu")
 file(GLOB velo_consolidate_tracks "consolidate_tracks/src/*cu")
+file(GLOB velo_consolidate_tracks_cpp "consolidate_tracks/src/*cpp")
 
 allen_add_device_library(Velo STATIC
   ${velo_clustering_sources}
@@ -17,7 +18,13 @@ allen_add_device_library(Velo STATIC
   ${velo_consolidate_tracks}
 )
 
-target_link_libraries(Velo PRIVATE Backend HostEventModel EventModel Utils)
+allen_add_host_library(VeloHost STATIC
+  ${velo_consolidate_tracks_cpp}
+)
+
+target_link_libraries(VeloHost PRIVATE Backend HostEventModel EventModel Utils)
+
+target_link_libraries(Velo PRIVATE Backend HostEventModel EventModel Utils VeloHost)
 
 target_include_directories(Velo PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common/include>
@@ -31,3 +38,13 @@ target_include_directories(Velo PUBLIC
 
 target_include_directories(WrapperInterface INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common/include>)
+
+target_include_directories(VeloHost PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/prefix_sum/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mask_clustering/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/retinacluster_decoding/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/calculate_phi_and_sort/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/search_by_triplet/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/simplified_kalman_filter/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/consolidate_tracks/include>)

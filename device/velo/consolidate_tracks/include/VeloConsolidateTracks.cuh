@@ -9,6 +9,9 @@
 #include "Common.h"
 #include "AlgorithmTypes.cuh"
 #include <cstdint>
+#ifndef ALLEN_STANDALONE
+#include "Gaudi/Accumulators.h"
+#endif
 
 namespace velo_consolidate_tracks {
   struct Parameters {
@@ -68,6 +71,8 @@ namespace velo_consolidate_tracks {
   };
 
   struct velo_consolidate_tracks_t : public DeviceAlgorithm, Parameters {
+    void init();
+
     using contracts = std::tuple<lhcb_id_container_checks>;
 
     void set_arguments_size(
@@ -85,5 +90,16 @@ namespace velo_consolidate_tracks {
 
   private:
     Property<block_dim_t> m_block_dim {this, {{256, 1, 1}}};
+
+#ifndef ALLEN_STANDALONE
+  public:
+    void init_monitor();
+
+    void monitor_operator(const ArgumentReferences<Parameters>& arguments, gsl::span<unsigned>) const;
+
+  private:
+    mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_velo_tracks;
+    //mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_velo_clusters;
+#endif
   };
 } // namespace velo_consolidate_tracks

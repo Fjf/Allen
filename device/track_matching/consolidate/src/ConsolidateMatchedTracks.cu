@@ -51,6 +51,14 @@ void matching_consolidate_tracks::matching_consolidate_tracks_t::set_arguments_s
   set_size<dev_multi_event_long_tracks_ptr_t>(arguments, 1);
 }
 
+void matching_consolidate_tracks::matching_consolidate_tracks_t::init()
+{
+#ifndef ALLEN_STANDALONE
+  matching_consolidate_tracks::matching_consolidate_tracks_t::init_monitor();
+#endif
+}
+
+
 void matching_consolidate_tracks::matching_consolidate_tracks_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
@@ -62,6 +70,16 @@ void matching_consolidate_tracks::matching_consolidate_tracks_t::operator()(
     dim3(size<dev_event_list_t>(arguments)), property<block_dim_t>(), context)(arguments);
 
   global_function(create_matched_views)(first<host_number_of_events_t>(arguments), 256, context)(arguments);
+ 
+#ifndef ALLEN_STANDALONE
+  // Monitoring
+  auto host_track_offsets =
+    make_host_buffer<unsigned>(arguments, size<dev_offsets_matched_tracks_t>(arguments));
+  Allen::copy_async(
+    host_track_offsets.get(), get<dev_offsets_matched_tracks_t>(arguments), context, Allen::memcpyDeviceToHost);
+  Allen::synchronize(context);
+  monitor_operator(arguments, host_track_offsets);
+#endif
 }
 
 __global__ void matching_consolidate_tracks::matching_consolidate_tracks(

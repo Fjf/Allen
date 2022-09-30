@@ -7,6 +7,9 @@
 #include "SciFiConsolidated.cuh"
 #include "SciFiEventModel.cuh"
 #include "AlgorithmTypes.cuh"
+#ifndef ALLEN_STANDALONE
+#include "Gaudi/Accumulators.h"
+#endif
 
 namespace seed_confirmTracks_consolidate {
   struct Parameters {
@@ -49,6 +52,8 @@ namespace seed_confirmTracks_consolidate {
   __global__ void seed_confirmTracks_consolidate(Parameters, const float* dev_magnet_polarity);
 
   struct seed_confirmTracks_consolidate_t : public DeviceAlgorithm, Parameters {
+    void init();
+
     void set_arguments_size(
       ArgumentReferences<Parameters> arguments,
       const RuntimeOptions&,
@@ -64,5 +69,14 @@ namespace seed_confirmTracks_consolidate {
 
   private:
     Property<block_dim_t> m_block_dim {this, {{256, 1, 1}}};
+#ifndef ALLEN_STANDALONE
+  public:
+    void init_monitor();
+
+    void monitor_operator(const ArgumentReferences<Parameters>& arguments, gsl::span<unsigned>) const;
+
+  private:
+    mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_seed_tracks;
+#endif
   };
 } // namespace seed_confirmTracks_consolidate

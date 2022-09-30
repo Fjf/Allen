@@ -4,7 +4,7 @@
 from PyConf.control_flow import NodeLogic, CompositeNode
 from AllenCore.generator import generate, make_algorithm
 from AllenConf.hlt1_calibration_lines import make_passthrough_line
-from AllenConf.persistency import make_global_decision
+from AllenConf.persistency import make_global_decision, make_routingbits_writer
 from AllenConf.odin import decode_odin
 from AllenCore.algorithms import data_provider_t
 from AllenConf.utils import line_maker
@@ -31,7 +31,8 @@ lines = CompositeNode(
 
 passthrough_sequence = CompositeNode(
     "Passthrough", [
-        providers, lines, global_decision,
+        providers, lines,
+        make_routingbits_writer(lines=line_algorithms), global_decision,
         rate_validation(lines=line_algorithms)
     ],
     NodeLogic.NONLAZY_AND,

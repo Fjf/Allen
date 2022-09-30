@@ -480,5 +480,5 @@ def seeding():
     decoded_scifi = decode_scifi()
     seeding_xz_tracks = make_seeding_XZ_tracks(decoded_scifi)
     seeding_tracks = make_seeding_tracks(decoded_scifi, seeding_xz_tracks)
-    alg = seeding_tracks["seed_tracks"]
+    alg = seeding_tracks["dev_scifi_tracks_view"]
     return alg
