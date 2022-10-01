@@ -92,6 +92,7 @@ namespace matching_consolidate_tracks {
 
   private:
     mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_long_tracks;
+    void* histogram_n_long_tracks;
 #endif
   };
 } // namespace matching_consolidate_tracks

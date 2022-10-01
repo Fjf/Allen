@@ -99,6 +99,7 @@ namespace velo_consolidate_tracks {
 
   private:
     mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_velo_tracks;
+    void* histogram_n_velo_tracks;
     //mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_velo_clusters;
 #endif
   };

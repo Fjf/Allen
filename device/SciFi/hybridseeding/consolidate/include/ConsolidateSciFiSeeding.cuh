@@ -77,6 +77,7 @@ namespace seed_confirmTracks_consolidate {
 
   private:
     mutable std::unique_ptr<Gaudi::Accumulators::Counter<>> m_seed_tracks;
+    void* histogram_n_scifi_seeds;
 #endif
   };
 } // namespace seed_confirmTracks_consolidate
