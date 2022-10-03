@@ -17,6 +17,9 @@ void two_calo_clusters_line::two_calo_clusters_line_t::set_arguments_size(
 {
   static_cast<Line const*>(this)->set_arguments_size(arguments, runtime_options, constants, host_buffers);
   set_size<dev_local_decisions_t>(arguments, get_decisions_size(arguments));
+  set_size<host_ecal_twoclusters_t>(arguments, size<dev_ecal_twoclusters_t>(arguments));
+  set_size<host_local_decisions_t>(arguments, get_decisions_size(arguments));
+  set_size<host_ecal_twocluster_offsets_t>(arguments, size<dev_ecal_twocluster_offsets_t>(arguments));
 }
 
 __device__ bool two_calo_clusters_line::two_calo_clusters_line_t::select(

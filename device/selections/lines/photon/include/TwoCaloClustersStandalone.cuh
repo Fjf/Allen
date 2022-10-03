@@ -7,9 +7,9 @@
 #include "ROOTService.h"
 #include "AlgorithmTypes.cuh"
 #include "ParticleTypes.cuh"
-#include <CaloCluster.cuh>
+#include "CaloCluster.cuh"
 #include <cfloat>
-namespace two_calo_clusters_line {
+namespace two_calo_clusters_standalone_line {
   struct Parameters {
     HOST_INPUT(host_number_of_events_t, unsigned) host_number_of_events;
     HOST_INPUT(host_ecal_number_of_twoclusters_t, unsigned) host_ecal_number_of_twoclusters;
@@ -25,7 +25,6 @@ namespace two_calo_clusters_line {
     HOST_OUTPUT(host_fn_parameters_t, char) host_fn_parameters;
 
     // Monitoring
-    DEVICE_OUTPUT(dev_local_decisions_t, bool) dev_local_decisions;
     HOST_OUTPUT(host_ecal_twoclusters_t, TwoCaloCluster) host_ecal_twoclusters;
     HOST_OUTPUT(host_local_decisions_t, bool) host_local_decisions;
     HOST_OUTPUT(dev_local_decisions_t, bool) dev_local_decisions;
@@ -41,26 +40,39 @@ namespace two_calo_clusters_line {
     PROPERTY(minEt_t, "minEt", "min Et of the twocluster", float) minEt;
     PROPERTY(minMass_t, "minMass", "min Mass of the two cluster", float) minMass;
     PROPERTY(maxMass_t, "maxMass", "max Mass of the two cluster", float) maxMass;
+    PROPERTY(minTransverseDistance_t, "minTransverseDistance", "min transversei distance between two clusters", float) minTransverseDistance;
     PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
+
+    DEVICE_OUTPUT(dev_histogram_pi0_mass_t, float) dev_histogram_pi0_mass;
+    PROPERTY(histogram_pi0_mass_min_t, "histogram_pi0_mass_min", "histogram_pi0_mass_min description", float)
+    histogram_pi0_mass_min;
+    PROPERTY(histogram_pi0_mass_max_t, "histogram_pi0_mass_max", "histogram_pi0_mass_max description", float)
+    histogram_pi0_mass_max;
+    PROPERTY(
+      histogram_pi0_mass_nbins_t,
+      "histogram_pi0_mass_nbins",
+      "histogram_pi0_mass_nbins description",
+      unsigned int)
+    histogram_pi0_mass_nbins;
   };
 
-  struct two_calo_clusters_line_t : public SelectionAlgorithm, Parameters, Line<two_calo_clusters_line_t, Parameters> {
+  struct two_calo_clusters_standalone_line_t : public SelectionAlgorithm, Parameters, Line<two_calo_clusters_standalone_line_t, Parameters> {
 
+    void init();
     void init_monitor(const ArgumentReferences<Parameters>& arguments, const Allen::Context& context) const;
 
-    __device__ static void
-    monitor(const Parameters& parameters, std::tuple<const TwoCaloCluster>, unsigned index, bool sel);
+    __device__ static void monitor(const Parameters& parameters, std::tuple<const TwoCaloCluster>, unsigned index, bool sel);
 
-    void output_monitor(const ArgumentReferences<Parameters>& arguments, const RuntimeOptions&, const Allen::Context&)
+    __host__ void output_monitor(const ArgumentReferences<Parameters>& arguments, const RuntimeOptions&, const Allen::Context&)
       const;
 
-    __device__ static bool select(const Parameters& parameters, std::tuple<const TwoCaloCluster> input);
+    __device__ static bool select(const Parameters& ps, std::tuple<const TwoCaloCluster&> input);
 
     void set_arguments_size(
       ArgumentReferences<Parameters> arguments,
-      const RuntimeOptions& runtime_options,
-      const Constants& constants,
-      const HostBuffers& host_buffers) const;
+      const RuntimeOptions&,
+      const Constants&,
+      const HostBuffers&) const;
 
     __device__ static unsigned offset(const Parameters& parameters, const unsigned event_number)
     {
@@ -91,12 +103,19 @@ namespace two_calo_clusters_line {
     Property<post_scaler_t> m_post_scaler {this, 1.f};
     Property<pre_scaler_hash_string_t> m_pre_scaler_hash_string {this, ""};
     Property<post_scaler_hash_string_t> m_post_scaler_hash_string {this, ""};
-    Property<minMass_t> m_minMass {this, 3000.0f};                   // MeV
-    Property<maxMass_t> m_maxMass {this, 7000.0f};                   // MeV
-    Property<minEt_t> m_minEt {this, 0.0f};                          // MeV
-    Property<minEt_clusters_t> m_minEt_clusters {this, 200.f};       // MeV
-    Property<minSumEt_clusters_t> m_minSumEt_clusters {this, 400.f}; // MeV
-    Property<minE19_clusters_t> m_minE19_clusters {this, 0.6f};
+    Property<minMass_t> m_minMass {this, 80.0f};                   // MeV
+    Property<maxMass_t> m_maxMass {this, 250.0f};                   // MeV
+    Property<minEt_t> m_minEt {this, 1400.0f};                          // MeV
+    Property<minEt_clusters_t> m_minEt_clusters {this, 1400.f};       // MeV
+    Property<minSumEt_clusters_t> m_minSumEt_clusters {this, 1400.f}; // MeV
+    Property<minE19_clusters_t> m_minE19_clusters {this, 0.0f};
     Property<enable_monitoring_t> m_enable_monitoring {this, false};
+    Property<histogram_pi0_mass_min_t> m_histogramPi0MassMin {this, 80.f};
+    Property<histogram_pi0_mass_max_t> m_histogramPi0MassMax {this, 500.f};
+    Property<histogram_pi0_mass_nbins_t> m_histogramPi0MassNBins {this, 80u};
+    Property<minTransverseDistance_t> m_minTransverseDistance {this, 200.0f};                   // mm
+#ifndef ALLEN_STANDALONE
+    char* histogram_pi0_mass;
+#endif
   };
-} // namespace two_calo_clusters_line
+} // namespace two_calo_clusters_standalone_line
