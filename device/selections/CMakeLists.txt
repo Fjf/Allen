@@ -47,23 +47,7 @@ target_link_libraries(Selections PRIVATE
   extern_lines
   SelectionsHost)
 
-<<<<<<< HEAD
-target_include_directories(Selections PUBLIC
-||||||| 201b6f943
-if(USE_ROOT)
-  # Locally suppress float->double promotion warnings caused by ROOT TH interfaces
-  string(APPEND CMAKE_CXX_FLAGS " -Wno-double-promotion ")
-endif()
-
-target_include_directories(Selections PUBLIC
-=======
-if(USE_ROOT)
-  # Locally suppress float->double promotion warnings caused by ROOT TH interfaces
-  string(APPEND CMAKE_CXX_FLAGS " -Wno-double-promotion ")
-endif()
-
 target_include_directories(SelectionsHost PUBLIC
->>>>>>> commissioning_pi0_line
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/configuration/sequences>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Hlt1/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/filters/include>
@@ -80,11 +64,6 @@ target_include_directories(SelectionsHost PUBLIC
 target_include_directories(Selections PUBLIC
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/configuration/sequences>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Hlt1/include>
-<<<<<<< HEAD
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/calibration/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/muon/include>
-||||||| 201b6f943
-=======
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/filters/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/calibration/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/monitoring/include>
@@ -94,6 +73,5 @@ target_include_directories(Selections PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/electron/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/photon/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lines/SMOG2/include>
->>>>>>> commissioning_pi0_line
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/line_types/include>)
 

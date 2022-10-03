@@ -5,6 +5,7 @@
 #include "TwoCaloClustersStandalone.cuh"
 #include <ROOTHeaders.h>
 #include "CaloConstants.cuh"
+#include "CaloCluster.cuh"
 
 // Explicit instantiation
 INSTANTIATE_LINE(two_calo_clusters_standalone_line::two_calo_clusters_standalone_line_t, two_calo_clusters_standalone_line::Parameters)
@@ -138,7 +139,7 @@ __device__ void two_calo_clusters_standalone_line::two_calo_clusters_standalone_
 //      const bool& decision = (data<host_local_decisions_t>(arguments) + twoclusters_offset + twocluster_index)[0];
 //      if (decision) {
 //        const auto& dicluster = (data<host_ecal_twoclusters_t>(arguments) + twoclusters_offset + twocluster_index)[0];
-//          
+//
 //        Mass = dicluster.Mass;
 //        Distance = dicluster.Distance;
 //        Et = dicluster.Et;

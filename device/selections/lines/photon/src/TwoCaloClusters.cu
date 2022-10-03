@@ -5,6 +5,7 @@
 #include "TwoCaloClusters.cuh"
 #include <ROOTHeaders.h>
 #include "CaloConstants.cuh"
+#include "CaloCluster.cuh"
 
 // Explicit instantiation
 INSTANTIATE_LINE(two_calo_clusters_line::two_calo_clusters_line_t, two_calo_clusters_line::Parameters)

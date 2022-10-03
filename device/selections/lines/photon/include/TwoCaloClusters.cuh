@@ -25,7 +25,7 @@ namespace two_calo_clusters_line {
     HOST_OUTPUT(host_fn_parameters_t, char) host_fn_parameters;
 
     // Monitoring
-    DEVICE_OUTPUT(dev_local_decisions_t, bool) dev_local_decisions;
+    // DEVICE_OUTPUT(dev_local_decisions_t, bool) dev_local_decisions;
     HOST_OUTPUT(host_ecal_twoclusters_t, TwoCaloCluster) host_ecal_twoclusters;
     HOST_OUTPUT(host_local_decisions_t, bool) host_local_decisions;
     HOST_OUTPUT(dev_local_decisions_t, bool) dev_local_decisions;
