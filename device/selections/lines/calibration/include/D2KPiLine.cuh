@@ -84,7 +84,6 @@ namespace d2kpi_line {
     Property<massWindow_t> m_massWindow {this, 100.f * Gaudi::Units::MeV};
     Property<minTrackIP_t> m_minTrackIP {this, 0.06f * Gaudi::Units::mm};
     Property<minZ_t> m_minZ {this, -300.f * Gaudi::Units::mm};
-    Property<minTrackIPChi2_t> m_minTrackIPChi2 {this, 9.f};
     Property<histogram_d0_mass_min_t> m_histogramD0MassMin {this, 1765.f};
     Property<histogram_d0_mass_max_t> m_histogramD0MassMax {this, 1965.f};
     Property<histogram_d0_mass_nbins_t> m_histogramD0MassNBins {this, 100u};

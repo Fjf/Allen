@@ -43,8 +43,8 @@ void d2kpi_line::d2kpi_line_t::init_monitor(
   const ArgumentReferences<Parameters>& arguments,
   const Allen::Context& context)
 {
-  initialize<dev_histogram_d0_mass_t>(arguments, 0, context);
-  initialize<dev_histogram_d0_pt_t>(arguments, 0, context);
+  Allen::memset_async<dev_histogram_d0_mass_t>(arguments, 0, context);
+  Allen::memset_async<dev_histogram_d0_pt_t>(arguments, 0, context);
 }
 
 __device__ void d2kpi_line::d2kpi_line_t::monitor(
