@@ -18,13 +18,13 @@ namespace {
 
     Beamline() {}
 
-    Beamline(std::vector<char>& data, DeVP const& velo)
+    Beamline(std::vector<char>& data, DeVP const& velo, std::vector<float> const& offset)
     {
       DumpUtils::Writer output;
 
       auto const beamSpot = velo.beamSpot();
-      float x = static_cast<float>(beamSpot.x());
-      float y = static_cast<float>(beamSpot.y());
+      float x = static_cast<float>(beamSpot.x()) + offset[0];
+      float y = static_cast<float>(beamSpot.y()) + offset[1];
       output.write(x, y);
       data = output.buffer();
     }
@@ -48,6 +48,8 @@ public:
 
 private:
   std::vector<char> m_data;
+
+  Gaudi::Property<std::vector<float>> m_offset{this, "BeamSpotOffset", {0.f, 0.f}};
 };
 
 DECLARE_COMPONENT(DumpBeamline)
@@ -61,7 +63,7 @@ StatusCode DumpBeamline::initialize()
   return Dumper::initialize().andThen([&] {
     register_producer(Allen::NonEventData::Beamline::id, "beamline", m_data);
     addConditionDerivation({DeVPLocation::Default}, inputLocation<Beamline>(), [&](DeVP const& velo) {
-      auto beamline = Beamline {m_data, velo};
+      auto beamline = Beamline {m_data, velo, m_offset};
       dump();
       return beamline;
     });
