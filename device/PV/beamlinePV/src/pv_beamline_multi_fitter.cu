@@ -17,7 +17,7 @@ void pv_beamline_multi_fitter::pv_beamline_multi_fitter_t::set_arguments_size(
 
 void pv_beamline_multi_fitter::pv_beamline_multi_fitter_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
-  const RuntimeOptions&,
+  const RuntimeOptions& runtime_options,
   const Constants& constants,
   HostBuffers&,
   const Allen::Context& context) const
@@ -27,6 +27,91 @@ void pv_beamline_multi_fitter::pv_beamline_multi_fitter_t::operator()(
   const auto block_dimension = dim3(warp_size, property<block_dim_y_t>());
   global_function(pv_beamline_multi_fitter)(dim3(size<dev_event_list_t>(arguments)), block_dimension, context)(
     arguments, constants.dev_beamline.data());
+
+  if (property<enable_monitoring_t>()) {
+    auto handler = runtime_options.root_service->handle(name());
+    auto tree_event = handler.tree("event");
+    auto tree_seed_tracks = handler.tree("seed_tracks");
+    auto tree_vertices = handler.tree("vertices");
+    if (tree_event == nullptr || tree_seed_tracks == nullptr || tree_vertices == nullptr) return;
+
+    unsigned n_multi_fit_vertices = 0u;
+    float initial_chi2 = 0.f;
+
+    float x, y, z = 0.f;
+    float cov00, cov10, cov11, cov20, cov21, cov22 = 0.f;
+    float chi2 = 0.f;
+    float nTracks = 0.f;
+    unsigned ndof = 0;
+
+    handler.branch(tree_event, "n_multi_fit_vertices", n_multi_fit_vertices);
+    handler.branch(tree_seed_tracks, "initial_chi2", initial_chi2);
+    handler.branch(tree_vertices, "x", x);
+    handler.branch(tree_vertices, "y", y);
+    handler.branch(tree_vertices, "z", z);
+    handler.branch(tree_vertices, "cov00", cov00);
+    handler.branch(tree_vertices, "cov10", cov10);
+    handler.branch(tree_vertices, "cov11", cov11);
+    handler.branch(tree_vertices, "cov20", cov20);
+    handler.branch(tree_vertices, "cov21", cov21);
+    handler.branch(tree_vertices, "cov22", cov22);
+    handler.branch(tree_vertices, "chi2", chi2);
+    handler.branch(tree_vertices, "ndof", ndof);
+    handler.branch(tree_vertices, "nTracks", nTracks);
+
+    const auto host_number_of_multi_fit_vertices =
+      make_host_buffer<dev_number_of_multi_fit_vertices_t>(arguments, context);
+    const auto host_number_of_zpeaks = make_host_buffer<dev_number_of_zpeaks_t>(arguments, context);
+    const auto host_zpeaks = make_host_buffer<dev_zpeaks_t>(arguments, context);
+    const auto host_event_list = make_host_buffer<dev_event_list_t>(arguments, context);
+    const auto host_pvtracks = make_host_buffer<dev_pvtracks_t>(arguments, context);
+    const auto host_velo_tracks_view = make_host_buffer<dev_velo_tracks_view_t>(arguments, context);
+    const auto host_multi_fit_vertices = make_host_buffer<dev_multi_fit_vertices_t>(arguments, context);
+
+    for (unsigned i = 0; i < size<dev_event_list_t>(arguments); i++) {
+      const auto event_number = host_event_list[i];
+      n_multi_fit_vertices = host_number_of_multi_fit_vertices[event_number];
+      const auto n_peaks = host_number_of_zpeaks[event_number];
+      const auto velo_tracks_view = host_velo_tracks_view[event_number];
+      const auto n_tracks = velo_tracks_view.size();
+
+      tree_event->Fill();
+
+      for (unsigned i_seed = 0; i_seed < n_peaks; i_seed++) {
+        const float seed_pos_z = host_zpeaks[event_number * PV::max_number_vertices + i_seed];
+
+        for (unsigned i_track = 0; i_track < n_tracks; i_track++) {
+          const auto trk = host_pvtracks[velo_tracks_view.offset() + i_track];
+
+          const float2 seed_pos_xy = {0.f, 0.f};
+
+          const auto dz = seed_pos_z - trk.z;
+          const float2 res = seed_pos_xy - (trk.x + trk.tx * dz);
+          initial_chi2 = res.x * res.x * trk.W_00 + res.y * res.y * trk.W_11;
+
+          tree_seed_tracks->Fill();
+        }
+      }
+
+      for (unsigned i_vertex = 0; i_vertex < n_multi_fit_vertices; i_vertex++) {
+        const auto vertex = host_multi_fit_vertices[event_number * PV::max_number_vertices + i_vertex];
+        x = vertex.position.x;
+        y = vertex.position.y;
+        z = vertex.position.z;
+        chi2 = vertex.chi2;
+        ndof = vertex.ndof;
+        nTracks = vertex.nTracks;
+        cov00 = vertex.cov00;
+        cov10 = vertex.cov10;
+        cov11 = vertex.cov11;
+        cov20 = vertex.cov20;
+        cov21 = vertex.cov21;
+        cov22 = vertex.cov22;
+
+        tree_vertices->Fill();
+      }
+    }
+  }
 }
 
 __global__ void pv_beamline_multi_fitter::pv_beamline_multi_fitter(
@@ -92,7 +177,7 @@ __global__ void pv_beamline_multi_fitter::pv_beamline_multi_fitter(
         const auto chi2 = res.x * res.x * trk.W_00 + res.y * res.y * trk.W_11;
 
         // compute the weight.
-        if (chi2 < BeamlinePVConstants::MultiFitter::maxChi2) {
+        if (chi2 < parameters.max_chi2) {
           ++nselectedtracks;
           // for more information on the weighted fitting, see e.g.
           // Adaptive Multi-vertex fitting, R. Frühwirth, W. Waltenberger

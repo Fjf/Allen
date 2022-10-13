@@ -16,7 +16,6 @@ namespace BeamlinePVConstants {
   }                                                      // namespace Common
 
   namespace Histo {
-    static constexpr float maxTrackBLChi2 = 10.f;
     static constexpr int order_polynomial = 2; // order of the polynomial used to approximate Gaussian
   }                                            // namespace Histo
 
@@ -32,7 +31,6 @@ namespace BeamlinePVConstants {
     static constexpr float maxVertexRho2 = 0.3f;  // unit:: mm^2 "Maximum distance squared of vertex to beam line"
     static constexpr unsigned int minFitIter = 3; // "Minimum number of iterations for vertex fit"
     static constexpr unsigned int maxFitIter = 7; // "Maximum number of iterations for vertex fit"
-    static constexpr float maxChi2 = 12.f;        // Maximum chi2 for track to be used in fit
     static constexpr float minWeight =
       0.0f; // Minimum weight for track to be used in fit. Can be tuned, but a too large value worses PV resolution
     static constexpr float chi2Cut = 4.f;             // chi2 cut-off in multi-fitter

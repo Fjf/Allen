@@ -564,7 +564,7 @@ file(GLOB available_sequences CONFIGURE_DEPENDS "configuration/python/AllenSeque
 set(BUILD_SEQUENCES "")
 foreach(sequence_filename ${available_sequences})
   get_filename_component(sequence ${sequence_filename} NAME_WE)
-  string(REGEX MATCH "^${SEQUENCES}\$" sequence_matches ${sequence})
+  string(REGEX MATCH "^${SEQUENCES}\$" sequence_matches "${sequence}")
   if (sequence_matches OR "${SEQUENCES}" STREQUAL "all")
     list(APPEND BUILD_SEQUENCES ${sequence})
   endif()

@@ -12,6 +12,7 @@
 #include "VeloEventModel.cuh"
 #include "FloatOperations.cuh"
 #include <cstdint>
+#include "ROOTService.h"
 
 namespace pv_beamline_multi_fitter {
   struct Parameters {
@@ -26,6 +27,8 @@ namespace pv_beamline_multi_fitter {
     DEVICE_OUTPUT(dev_multi_fit_vertices_t, PV::Vertex) dev_multi_fit_vertices;
     DEVICE_OUTPUT(dev_number_of_multi_fit_vertices_t, unsigned) dev_number_of_multi_fit_vertices;
     PROPERTY(block_dim_y_t, "block_dim_y", "block dimension Y", unsigned) block_dim_y;
+    PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
+    PROPERTY(max_chi2_t, "max_chi2", "max chi2 for track to be used in fit", float) max_chi2;
   };
 
   __global__ void pv_beamline_multi_fitter(Parameters, const float* dev_beamline);
@@ -46,5 +49,7 @@ namespace pv_beamline_multi_fitter {
 
   private:
     Property<block_dim_y_t> m_block_dim_y {this, 4};
+    Property<enable_monitoring_t> m_enable_monitoring {this, false};
+    Property<max_chi2_t> m_max_chi2 {this, 300.f}; // original value: 12.f
   };
 } // namespace pv_beamline_multi_fitter

@@ -61,7 +61,6 @@ void two_calo_clusters_line::two_calo_clusters_line_t::output_monitor(
   [[maybe_unused]] const Allen::Context& context) const
 {
   auto handler = runtime_options.root_service->handle(name());
-
   // Distributions per dicluster
   auto tree_twoclusters = handler.tree("monitor_tree_twoclusters");
   if (tree_twoclusters == nullptr) return;

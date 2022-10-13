@@ -91,4 +91,4 @@ def make_standalone_pi0_line(calo,
         minE19_clusters=minE19_clusters,
         minTransverseDistance=minTransverseDistance,
         #histogram_pi0_mass_max=histogram_pi0_mass_max,
-        enable_monitoring=enable_monitoring)
+        enable_monitoring=True)

@@ -25,6 +25,7 @@ namespace {
       auto const beamSpot = velo.beamSpot();
       float x = static_cast<float>(beamSpot.x()) + offset[0];
       float y = static_cast<float>(beamSpot.y()) + offset[1];
+      std::cout << "Beamline position: x = " << x << ", y = " << y << std::endl;
       output.write(x, y);
       data = output.buffer();
     }
@@ -49,7 +50,7 @@ public:
 private:
   std::vector<char> m_data;
 
-  Gaudi::Property<std::vector<float>> m_offset{this, "BeamSpotOffset", {0.f, 0.f}};
+  Gaudi::Property<std::vector<float>> m_offset {this, "BeamSpotOffset", {0.f, 0.f}};
 };
 
 DECLARE_COMPONENT(DumpBeamline)

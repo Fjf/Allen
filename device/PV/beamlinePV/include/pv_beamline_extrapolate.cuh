@@ -13,6 +13,7 @@
 #include "FloatOperations.cuh"
 #include "States.cuh"
 #include <cstdint>
+#include "ROOTService.h"
 
 namespace pv_beamline_extrapolate {
   struct Parameters {
@@ -22,6 +23,7 @@ namespace pv_beamline_extrapolate {
     DEVICE_INPUT(dev_velo_states_view_t, Allen::Views::Physics::KalmanStates) dev_velo_states_view;
     DEVICE_OUTPUT(dev_pvtracks_t, PVTrack) dev_pvtracks;
     PROPERTY(block_dim_t, "block_dim", "block dimensions", DeviceDimensions) block_dim;
+    PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
   };
 
   __global__ void pv_beamline_extrapolate(Parameters);
@@ -42,5 +44,7 @@ namespace pv_beamline_extrapolate {
 
   private:
     Property<block_dim_t> m_block_dim {this, {{128, 1, 1}}};
+    Property<enable_monitoring_t> m_enable_monitoring {this, false};
   };
+
 } // namespace pv_beamline_extrapolate

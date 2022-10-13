@@ -13,6 +13,7 @@
 #include "patPV_Definitions.cuh"
 #include "FloatOperations.cuh"
 #include <cstdint>
+#include "ROOTService.h"
 
 namespace pv_beamline_peak {
   struct Parameters {
@@ -21,6 +22,7 @@ namespace pv_beamline_peak {
     DEVICE_INPUT(dev_zhisto_t, float) dev_zhisto;
     DEVICE_OUTPUT(dev_zpeaks_t, float) dev_zpeaks;
     DEVICE_OUTPUT(dev_number_of_zpeaks_t, unsigned) dev_number_of_zpeaks;
+    PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
   };
 
   __global__ void pv_beamline_peak(Parameters);
@@ -38,5 +40,8 @@ namespace pv_beamline_peak {
       const Constants&,
       HostBuffers&,
       const Allen::Context& context) const;
+
+  private:
+    Property<enable_monitoring_t> m_enable_monitoring {this, false};
   };
 } // namespace pv_beamline_peak

@@ -47,6 +47,8 @@ __global__ void pv_beamline_histo::pv_beamline_histo(pv_beamline_histo::Paramete
   const auto velo_tracks_view = parameters.dev_velo_tracks_view[event_number];
   float* histo_base_pointer = parameters.dev_zhisto + BeamlinePVConstants::Common::Nbins * event_number;
 
+  // printf("beamline x = %f, y = %f \n", dev_beamline[0], dev_beamline[1]);
+
   for (unsigned index = threadIdx.x; index < velo_tracks_view.size(); index += blockDim.x) {
     PVTrack trk = parameters.dev_pvtracks[velo_tracks_view.offset() + index];
     // apply the z cut here
@@ -54,7 +56,7 @@ __global__ void pv_beamline_histo::pv_beamline_histo(pv_beamline_histo::Paramete
       const float diffx2 = (trk.x.x - dev_beamline[0]) * (trk.x.x - dev_beamline[0]);
       const float diffy2 = (trk.x.y - dev_beamline[1]) * (trk.x.y - dev_beamline[1]);
       const float blchi2 = diffx2 * trk.W_00 + diffy2 * trk.W_11;
-      if (blchi2 >= BeamlinePVConstants::Histo::maxTrackBLChi2) continue;
+      if (blchi2 >= parameters.max_track_blchi2) continue;
 
       // bin in which z0 is, in floating point
       const float zbin = (trk.z - BeamlinePVConstants::Common::zmin) / BeamlinePVConstants::Common::dz;

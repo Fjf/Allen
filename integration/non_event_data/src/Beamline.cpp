@@ -26,6 +26,5 @@ void Consumers::Beamline::consume(std::vector<char> const& data)
     throw StrException {string {"sizes don't match: "} + to_string(m_dev_beamline.get().size()) + " " +
                         to_string(data.size() / sizeof(float))};
   }
-
   Allen::memcpy(m_dev_beamline.get().data(), data.data(), data.size(), Allen::memcpyHostToDevice);
 }

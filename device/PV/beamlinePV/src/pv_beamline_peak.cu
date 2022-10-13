@@ -17,12 +17,39 @@ void pv_beamline_peak::pv_beamline_peak_t::set_arguments_size(
 
 void pv_beamline_peak::pv_beamline_peak_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
-  const RuntimeOptions&,
+  const RuntimeOptions& runtime_options,
   const Constants&,
   HostBuffers&,
   const Allen::Context& context) const
 {
   global_function(pv_beamline_peak)(dim3(size<dev_event_list_t>(arguments)), warp_size, context)(arguments);
+
+  if (property<enable_monitoring_t>()) {
+    auto handler = runtime_options.root_service->handle(name());
+    auto tree_event = handler.tree("event");
+    auto tree_peaks = handler.tree("peaks");
+    if (tree_event == nullptr || tree_peaks == nullptr) return;
+
+    unsigned n_peaks = 0u;
+    float z_peaks = 0.f;
+
+    handler.branch(tree_event, "n_peaks", n_peaks);
+    handler.branch(tree_peaks, "z_peaks", z_peaks);
+
+    const auto host_number_of_zpeaks = make_host_buffer<dev_number_of_zpeaks_t>(arguments, context);
+    const auto host_zpeaks = make_host_buffer<dev_zpeaks_t>(arguments, context);
+    const auto host_event_list = make_host_buffer<dev_event_list_t>(arguments, context);
+
+    for (unsigned i = 0; i < size<dev_event_list_t>(arguments); i++) {
+      const auto event_number = host_event_list[i];
+      n_peaks = host_number_of_zpeaks[event_number];
+      tree_event->Fill();
+      for (unsigned j = 0; j < n_peaks; j++) {
+        z_peaks = host_zpeaks[PV::max_number_vertices * event_number + j];
+        tree_peaks->Fill();
+      }
+    }
+  }
 }
 
 __global__ void pv_beamline_peak::pv_beamline_peak(pv_beamline_peak::Parameters parameters)

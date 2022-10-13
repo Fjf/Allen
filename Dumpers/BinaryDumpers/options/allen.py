@@ -157,7 +157,7 @@ if not args.simulation:
             dd4hepSvc.ConditionsLocation = 'file://' + online_cond_path
         else:
             from Configurables import XmlCnvSvc
-            XmlCnvSvc().OutputLevel = 5
+            #XmlCnvSvc().OutputLevel = 5
             options.velo_motion_system_yaml = os.path.join(
                 online_cond_path + '/Conditions/VP/Motion.yml')
     make_odin = allen_odin

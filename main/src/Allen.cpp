@@ -294,7 +294,7 @@ int allen(
 
   // Set up monitoring sink
   MonitoringAggregator monitoringAggregator;
-  MonitoringPrinter monitoringPrinter {10, enable_monitoring_printing};
+  MonitoringPrinter monitoringPrinter {1, enable_monitoring_printing};
 
 #ifndef ALLEN_STANDALONE
   if (register_monitoring_counters) {

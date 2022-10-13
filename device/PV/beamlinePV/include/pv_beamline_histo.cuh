@@ -22,6 +22,7 @@ namespace pv_beamline_histo {
     DEVICE_INPUT(dev_pvtracks_t, PVTrack) dev_pvtracks;
     DEVICE_OUTPUT(dev_zhisto_t, float) dev_zhisto;
     PROPERTY(block_dim_t, "block_dim", "block dimensions", DeviceDimensions) block_dim;
+    PROPERTY(max_track_blchi2_t, "max_track_blchi2", "max track beamline chi2", float) max_track_blchi2;
   };
 
   __global__ void pv_beamline_histo(Parameters, float* dev_beamline);
@@ -42,5 +43,6 @@ namespace pv_beamline_histo {
 
   private:
     Property<block_dim_t> m_block_dim {this, {{128, 1, 1}}};
+    Property<max_track_blchi2_t> m_max_track_blchi2 {this, {500.f}}; // original value: 10.f
   };
 } // namespace pv_beamline_histo

@@ -8,6 +8,7 @@ from AllenCore.algorithms import (
 from AllenConf.velo_reconstruction import run_velo_kalman_filter
 from AllenConf.utils import initialize_number_of_events
 from AllenCore.generator import make_algorithm
+from PyConf.tonic import configurable
 
 
 def make_pvs(velo_tracks):
@@ -27,6 +28,7 @@ def make_pvs(velo_tracks):
     pv_beamline_extrapolate = make_algorithm(
         pv_beamline_extrapolate_t,
         name="pv_beamline_extrapolate",
+        enable_monitoring=False,
         host_number_of_reconstructed_velo_tracks_t=
         host_number_of_reconstructed_velo_tracks,
         dev_velo_tracks_view_t=velo_tracks["dev_velo_tracks_view"],
@@ -43,6 +45,7 @@ def make_pvs(velo_tracks):
     pv_beamline_peak = make_algorithm(
         pv_beamline_peak_t,
         name="pv_beamline_peak",
+        enable_monitoring=False,
         host_number_of_events_t=host_number_of_events,
         dev_zhisto_t=pv_beamline_histo.dev_zhisto_t)
 
@@ -59,6 +62,7 @@ def make_pvs(velo_tracks):
     pv_beamline_multi_fitter = make_algorithm(
         pv_beamline_multi_fitter_t,
         name="pv_beamline_multi_fitter",
+        enable_monitoring=False,
         host_number_of_events_t=host_number_of_events,
         host_number_of_reconstructed_velo_tracks_t=
         host_number_of_reconstructed_velo_tracks,
