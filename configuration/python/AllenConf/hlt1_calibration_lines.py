@@ -8,6 +8,7 @@ from AllenCore.algorithms import (
     rich_2_line_t,
     displaced_di_muon_mass_line_t,
     di_muon_mass_alignment_line_t,
+    lambda2ppi_line_t,
 )
 from AllenConf.utils import initialize_number_of_events
 from AllenCore.generator import make_algorithm
@@ -150,3 +151,21 @@ def make_di_muon_mass_align_line(long_tracks,
         maxDoca=maxDoca,
         maxVertexChi2=maxVertexChi2,
         minIPChi2=minIPChi2)
+
+
+def make_lambda2ppi_line(secondary_vertices,
+                         name="Hlt1L02PPi",
+                         pre_scaler_hash_string=None,
+                         post_scaler_hash_string=None):
+
+    number_of_events = initialize_number_of_events()
+
+    return make_algorithm(
+        lambda2ppi_line_t,
+        name=name,
+        host_number_of_events_t=number_of_events["host_number_of_events"],
+        host_number_of_svs_t=secondary_vertices["host_number_of_svs"],
+        dev_particle_container_t=secondary_vertices[
+            "dev_multi_event_composites"],
+        pre_scaler_hash_string=pre_scaler_hash_string or name + '_pre',
+        post_scaler_hash_string=post_scaler_hash_string or name + '_post')
