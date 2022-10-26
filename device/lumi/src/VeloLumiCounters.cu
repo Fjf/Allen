@@ -8,52 +8,53 @@
 * granted to it by virtue of its status as an Intergovernmental Organization  *
 * or submit itself to any jurisdiction.                                       *
 \*****************************************************************************/
-#include "CalcLumiSumSize.cuh"
-#include "SelectionsEventModel.cuh"
-
-#include "LumiDefinitions.cuh"
+#include "VeloLumiCounters.cuh"
 #include <Event/LumiSummaryOffsets_V2.h>
 
-INSTANTIATE_ALGORITHM(calc_lumi_sum_size::calc_lumi_sum_size_t)
+INSTANTIATE_ALGORITHM(velo_lumi_counters::velo_lumi_counters_t)
 
-void calc_lumi_sum_size::calc_lumi_sum_size_t::set_arguments_size(
+void velo_lumi_counters::velo_lumi_counters_t::set_arguments_size(
   ArgumentReferences<Parameters> arguments,
   const RuntimeOptions&,
   const Constants&,
   const HostBuffers&) const
 {
-  set_size<dev_lumi_sum_sizes_t>(arguments, first<host_number_of_events_t>(arguments));
+  // convert the size of lumi summaries to the size of velo counter infos
+  set_size<dev_lumi_infos_t>(
+    arguments,
+    Lumi::Constants::n_velo_counters * first<host_lumi_summaries_size_t>(arguments) / Lumi::Constants::lumi_length);
 }
 
-void calc_lumi_sum_size::calc_lumi_sum_size_t::operator()(
+void velo_lumi_counters::velo_lumi_counters_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
   const Constants&,
   HostBuffers&,
   const Allen::Context& context) const
 {
-  Allen::memset_async<dev_lumi_sum_sizes_t>(arguments, 0, context);
+  // do nothing if no lumi event
+  if (first<host_lumi_summaries_size_t>(arguments) == 0) return;
 
-  global_function(calc_lumi_sum_size)(
+  global_function(velo_lumi_counters)(
     dim3(first<host_number_of_events_t>(arguments)), property<block_dim_t>(), context)(
     arguments, first<host_number_of_events_t>(arguments));
 }
 
-__global__ void calc_lumi_sum_size::calc_lumi_sum_size(
-  calc_lumi_sum_size::Parameters parameters,
+__global__ void velo_lumi_counters::velo_lumi_counters(
+  velo_lumi_counters::Parameters parameters,
   const unsigned number_of_events)
 {
   for (unsigned event_number = blockIdx.x * blockDim.x + threadIdx.x; event_number < number_of_events;
        event_number += blockDim.x * gridDim.x) {
-    // read decision from line
-    Selections::ConstSelections selections {
-      parameters.dev_selections, parameters.dev_selections_offsets, number_of_events};
-    // skip non-lumi event
-    const auto sel_span = selections.get_span(parameters.line_index, event_number);
-    if (sel_span.empty() || !sel_span[0]) continue;
+    unsigned lumi_sum_offset = parameters.dev_lumi_summary_offsets[event_number];
 
-    // the unit of LHCb::LumiSummaryOffsets::V2::TotalSize is bit
-    // convert it to be unsigned int
-    parameters.dev_lumi_sum_sizes[event_number] = Lumi::Constants::lumi_length;
+    // skip non-lumi event
+    if (lumi_sum_offset == parameters.dev_lumi_summary_offsets[event_number + 1]) continue;
+
+    unsigned info_offset = lumi_sum_offset / Lumi::Constants::lumi_length;
+    parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::VeloTracksOffset;
+    parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::VeloTracksSize;
+    parameters.dev_lumi_infos[info_offset].value =
+      parameters.dev_offsets_all_velo_tracks[event_number + 1] - parameters.dev_offsets_all_velo_tracks[event_number];
   }
 }
