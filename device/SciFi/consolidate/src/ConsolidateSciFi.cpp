@@ -26,7 +26,7 @@ void scifi_consolidate_tracks::scifi_consolidate_tracks_t::init_monitor()
     this,
     "n_long_tracks_event",
     "n_long_tracks_event",
-    Gaudi::Accumulators::Axis<float> {50, 0, (float) 200, {}, {}});
+    Gaudi::Accumulators::Axis<float> {80, 0, (float) 200, {}, {}});
 }
 
 void scifi_consolidate_tracks::scifi_consolidate_tracks_t::monitor_operator(
@@ -40,6 +40,7 @@ void scifi_consolidate_tracks::scifi_consolidate_tracks_t::monitor_operator(
   for (auto i = 0u; i < first<host_number_of_events_t>(arguments); ++i) {
     auto n_tracks_event = track_offsets[i+1] - track_offsets[i];
     buf_tracks+=n_tracks_event;
+    if(n_tracks_event>200) continue;
     hist_buf[n_tracks_event]++;
   }
 }

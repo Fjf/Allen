@@ -27,7 +27,7 @@ void seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::init_moni
     this,
     "n_scifi_seeds_event",
     "n_scifi_seeds_event",
-    Gaudi::Accumulators::Axis<float> {20, 0, (float) 50, {}, {}});
+    Gaudi::Accumulators::Axis<float> {80, 0, (float) 200, {}, {}});
 }
 
 void seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::monitor_operator(
@@ -41,6 +41,7 @@ void seed_confirmTracks_consolidate::seed_confirmTracks_consolidate_t::monitor_o
   for (auto i = 0u; i < first<host_number_of_events_t>(arguments); ++i) {
     auto n_tracks_event = track_offsets[i+1] - track_offsets[i];
     buf_tracks+=n_tracks_event;
+    if(n_tracks_event>200) continue;
     hist_buf[n_tracks_event]++;
   }
 }
