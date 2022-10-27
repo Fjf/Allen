@@ -182,13 +182,21 @@ def default_physics_lines(reconstructed_objects, with_calo, with_muon):
 def event_monitoring_lines(with_lumi, lumiline_name):
     lines = []
     lines.append(
-        line_maker(make_beam_line(name="Hlt1NoBeam", beam_crossing_type=0)))
+        line_maker(
+            make_beam_line(
+                name="Hlt1NoBeam", beam_crossing_type=0, pre_scaler=0.001)))
     lines.append(
-        line_maker(make_beam_line(name="Hlt1BeamOne", beam_crossing_type=1)))
+        line_maker(
+            make_beam_line(
+                name="Hlt1BeamOne", beam_crossing_type=1, pre_scaler=0.001)))
     lines.append(
-        line_maker(make_beam_line(name="Hlt1BeamTwo", beam_crossing_type=2)))
+        line_maker(
+            make_beam_line(
+                name="Hlt1BeamTwo", beam_crossing_type=2, pre_scaler=0.001)))
     lines.append(
-        line_maker(make_beam_line(name="Hlt1BothBeams", beam_crossing_type=3)))
+        line_maker(
+            make_beam_line(
+                name="Hlt1BothBeams", beam_crossing_type=3, pre_scaler=0.001)))
     if with_lumi:
         lines.append(
             line_maker(
@@ -424,14 +432,14 @@ def setup_hlt1_node(enablePhysics=True,
     lumiline_name = "Hlt1ODINLumi"
     with line_maker.bind(prefilter=odin_err_filter):
         monitoring_lines = event_monitoring_lines(with_lumi, lumiline_name)
-        physics_lines += [line_maker(make_passthrough_line(pre_scaler=0.04))]
+        physics_lines += [line_maker(make_passthrough_line(pre_scaler=0.001))]
 
     if EnableGEC:
         with line_maker.bind(prefilter=prefilters):
             physics_lines += [
                 line_maker(
                     make_passthrough_line(
-                        name="Hlt1GECPassthrough", pre_scaler=0.04))
+                        name="Hlt1GECPassthrough", pre_scaler=0.001))
             ]
 
     if enableBGI:
@@ -462,13 +470,16 @@ def setup_hlt1_node(enablePhysics=True,
         with line_maker.bind(prefilter=prefilters + [lowMult_5]):
             SMOG2_lines += [
                 line_maker(
-                    make_passthrough_line(name="Hlt1GECPassThrough_LowMult5"))
+                    make_passthrough_line(
+                        name="Hlt1GECPassThrough_LowMult5", pre_scaler=0.001))
             ]
 
         bx_BE = make_bxtype("BX_BeamEmpty", bx_type=1)
         with line_maker.bind(prefilter=odin_err_filter + [bx_BE]):
             SMOG2_lines += [
-                line_maker(make_passthrough_line(name="Hlt1_BESMOG2_NoBias"))
+                line_maker(
+                    make_passthrough_line(
+                        name="Hlt1_BESMOG2_NoBias", pre_scaler=0.001))
             ]
 
         lowMult_10 = make_lowmult(
@@ -479,7 +490,8 @@ def setup_hlt1_node(enablePhysics=True,
         with line_maker.bind(prefilter=odin_err_filter + [bx_BE, lowMult_10]):
             SMOG2_lines += [
                 line_maker(
-                    make_passthrough_line(name="Hlt1_BESMOG2_LowMult10"))
+                    make_passthrough_line(
+                        name="Hlt1_BESMOG2_LowMult10", pre_scaler=0.001))
             ]
 
         if EnableGEC:
@@ -491,7 +503,8 @@ def setup_hlt1_node(enablePhysics=True,
                     make_SMOG2_minimum_bias_line(
                         reconstructed_objects["velo_tracks"],
                         reconstructed_objects["velo_states"],
-                        name="Hlt1_SMOG2_MinimumBias"))
+                        name="Hlt1_SMOG2_MinimumBias",
+                        pre_scaler=0.001))
             ]
 
         SMOG2_prefilters += [
@@ -505,7 +518,8 @@ def setup_hlt1_node(enablePhysics=True,
         with line_maker.bind(prefilter=odin_err_filter + SMOG2_prefilters):
             SMOG2_lines += [
                 line_maker(
-                    make_passthrough_line(name="Hlt1Passthrough_PV_in_SMOG2"))
+                    make_passthrough_line(
+                        name="Hlt1Passthrough_PV_in_SMOG2", pre_scaler=0.004))
             ]
 
             SMOG2_lines += default_smog2_lines(

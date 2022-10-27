@@ -26,6 +26,8 @@ def make_SMOG2_dimuon_highmass_line(secondary_vertices,
 
 def make_SMOG2_minimum_bias_line(velo_tracks,
                                  velo_states,
+                                 pre_scaler=1.,
+                                 post_scaler=1.,
                                  pre_scaler_hash_string=None,
                                  post_scaler_hash_string=None,
                                  name="Hlt1SMOG2_MinimumBias"):
@@ -35,6 +37,8 @@ def make_SMOG2_minimum_bias_line(velo_tracks,
         SMOG2_minimum_bias_line_t,
         name=name,
         host_number_of_events_t=number_of_events["host_number_of_events"],
+        pre_scaler=pre_scaler,
+        post_scaler=post_scaler,
         host_number_of_reconstructed_velo_tracks_t=velo_tracks[
             "host_number_of_reconstructed_velo_tracks"],
         pre_scaler_hash_string=pre_scaler_hash_string or name + "_pre",

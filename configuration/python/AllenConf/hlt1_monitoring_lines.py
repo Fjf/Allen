@@ -12,7 +12,7 @@ from AllenCore.generator import make_algorithm
 def make_beam_line(pre_scaler_hash_string=None,
                    post_scaler_hash_string=None,
                    pre_scaler=1.,
-                   post_scaler=1.e-3,
+                   post_scaler=1.,
                    beam_crossing_type=0,
                    name=None):
     name_map = {
