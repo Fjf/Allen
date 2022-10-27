@@ -29,6 +29,7 @@ namespace di_muon_mass_line {
     PROPERTY(maxVertexChi2_t, "maxVertexChi2", "maxVertexChi2 description", float) maxVertexChi2;
     PROPERTY(minIPChi2_t, "minIPChi2", "minIPChi2 description", float) minIPChi2;
     PROPERTY(minZ_t, "minZ", "minimum vertex z coordinate", float) minZ;
+    PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
 
     HOST_OUTPUT(host_histogram_Jpsi_mass_t, float) host_histogram_Jpsi_mass;
     DEVICE_OUTPUT(dev_histogram_Jpsi_mass_t, float) dev_histogram_Jpsi_mass;
@@ -73,6 +74,7 @@ namespace di_muon_mass_line {
     Property<histogram_Jpsi_mass_min_t> m_histogramJpsiMassMin {this, 2996.f};
     Property<histogram_Jpsi_mass_max_t> m_histogramJpsiMassMax {this, 3196.f};
     Property<histogram_Jpsi_mass_nbins_t> m_histogramJpsiMassNBins {this, 100u};
+    Property<enable_monitoring_t> m_enable_monitoring {this, true};
 
 #ifndef ALLEN_STANDALONE
     void* histogram_Jpsi_mass;

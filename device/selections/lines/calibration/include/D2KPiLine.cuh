@@ -31,6 +31,7 @@ namespace d2kpi_line {
     PROPERTY(massWindow_t, "massWindow", "massWindow description", float) massWindow;
     PROPERTY(minTrackIP_t, "minTrackIP", "minTrackIP description", float) minTrackIP;
     PROPERTY(minZ_t, "minZ", "minimum vertex z coordinate", float) minZ;
+    PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
 
     HOST_OUTPUT(host_histogram_d0_mass_t, float) host_histogram_d0_mass;
     DEVICE_OUTPUT(dev_histogram_d0_mass_t, float) dev_histogram_d0_mass;
@@ -90,6 +91,7 @@ namespace d2kpi_line {
     Property<histogram_d0_pt_min_t> m_histogramD0PtMin {this, 0.f};
     Property<histogram_d0_pt_max_t> m_histogramD0PtMax {this, 1e4f};
     Property<histogram_d0_pt_nbins_t> m_histogramD0PtNBins {this, 100u};
+    Property<enable_monitoring_t> m_enable_monitoring {this, true};
 
 #ifndef ALLEN_STANDALONE
     void* histogram_d0_mass;
