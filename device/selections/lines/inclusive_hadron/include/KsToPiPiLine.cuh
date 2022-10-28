@@ -85,8 +85,8 @@ namespace kstopipi_line {
     Property<maxMass_t> m_maxMass {this, 600.f * Gaudi::Units::MeV};
     Property<minZ_t> m_minZ {this, -300.f * Gaudi::Units::mm};
 
-    Property<histogram_ks_mass_min_t> m_histogramksMassMin {this, 1765.f};
-    Property<histogram_ks_mass_max_t> m_histogramksMassMax {this, 1965.f};
+    Property<histogram_ks_mass_min_t> m_histogramksMassMin {this, 400.f};
+    Property<histogram_ks_mass_max_t> m_histogramksMassMax {this, 600.f};
     Property<histogram_ks_mass_nbins_t> m_histogramksMassNBins {this, 100u};
     // Switch to create monitoring tuple
     Property<enable_monitoring_t> m_enable_monitoring {this, false};
