@@ -163,36 +163,36 @@ __global__ void calo_lumi_counters::calo_lumi_counters(
     ++info_offset;
     parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::ECalEOuterTopOffset;
     parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::ECalEOuterTopSize;
-    parameters.dev_lumi_infos[info_offset].value = sum_e_area[0];
+    parameters.dev_lumi_infos[info_offset].value = sum_et_area[0];
 
     // Middle Top
     ++info_offset;
     parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::ECalEMiddleTopOffset;
     parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::ECalEMiddleTopSize;
-    parameters.dev_lumi_infos[info_offset].value = sum_e_area[1];
+    parameters.dev_lumi_infos[info_offset].value = sum_et_area[1];
 
     // Inner Top
     ++info_offset;
     parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::ECalEInnerTopOffset;
     parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::ECalEInnerTopSize;
-    parameters.dev_lumi_infos[info_offset].value = sum_e_area[2];
+    parameters.dev_lumi_infos[info_offset].value = sum_et_area[2];
 
     // Outer Bottom
     ++info_offset;
     parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::ECalEOuterBottomOffset;
     parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::ECalEOuterBottomSize;
-    parameters.dev_lumi_infos[info_offset].value = sum_e_area[3];
+    parameters.dev_lumi_infos[info_offset].value = sum_et_area[3];
 
     // Middle Bottom
     ++info_offset;
     parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::ECalEMiddleBottomOffset;
     parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::ECalEMiddleBottomSize;
-    parameters.dev_lumi_infos[info_offset].value = sum_e_area[4];
+    parameters.dev_lumi_infos[info_offset].value = sum_et_area[4];
 
     // Inner Bottom
     ++info_offset;
     parameters.dev_lumi_infos[info_offset].offset = LHCb::LumiSummaryOffsets::V2::ECalEInnerBottomOffset;
     parameters.dev_lumi_infos[info_offset].size = LHCb::LumiSummaryOffsets::V2::ECalEInnerBottomSize;
-    parameters.dev_lumi_infos[info_offset].value = sum_e_area[5];
+    parameters.dev_lumi_infos[info_offset].value = sum_et_area[5];
   }
 }
