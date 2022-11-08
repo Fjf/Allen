@@ -73,8 +73,7 @@ void calo_lumi_counters::calo_lumi_counters_t::operator()(
 
   Allen::memset_async<dev_energies_t>(arguments, 0, context);
 
-  global_function(calo_lumi_counters)(
-    dim3(first<host_number_of_events_t>(arguments)), property<block_dim_t>(), context)(
+  global_function(calo_lumi_counters)(dim3(2), property<block_dim_t>(), context)(
     arguments, first<host_number_of_events_t>(arguments), constants.dev_ecal_geometry);
 
   // Monitoring code
