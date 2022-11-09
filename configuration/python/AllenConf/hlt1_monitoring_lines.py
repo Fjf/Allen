@@ -42,7 +42,8 @@ def make_velo_micro_bias_line(velo_tracks,
                               pre_scaler=1.,
                               post_scaler=1.e-3,
                               pre_scaler_hash_string=None,
-                              post_scaler_hash_string=None):
+                              post_scaler_hash_string=None,
+                              min_velo_tracks=1):
     number_of_events = initialize_number_of_events()
 
     return make_algorithm(

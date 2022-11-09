@@ -37,7 +37,7 @@ def default_physics_lines(reconstructed_objects, with_calo, with_muon):
 
     lines = [
         make_two_track_mva_charm_xsec_line(
-            long_tracks, secondary_vertices, name="Hlt1TwoTrackMVACharmXSec"),
+            long_tracks, secondary_vertices, name="Hlt1TwoTrackMVACharmXSec", pre_scaler=0.1),
         make_kstopipi_line(
             long_tracks, secondary_vertices, name="Hlt1KsToPiPi"),
         make_track_mva_line(
@@ -60,7 +60,8 @@ def default_physics_lines(reconstructed_objects, with_calo, with_muon):
                 muon_stubs["consolidated_muon_tracks"],
                 muon_stubs["dev_output_buffer"],
                 muon_stubs["host_total_sum_holder"],
-                name="Hlt1OneMuonTrackLine"),
+                name="Hlt1OneMuonTrackLine",
+                pre_scaler=0.01),
             make_single_high_pt_muon_line(
                 long_tracks, long_track_particles,
                 name="Hlt1SingleHighPtMuon"),
