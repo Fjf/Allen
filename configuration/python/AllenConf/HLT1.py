@@ -220,7 +220,7 @@ def alignment_monitoring_lines(reconstructed_objects, with_muon=True):
     secondary_vertices = reconstructed_objects["secondary_vertices"]
 
     lines = [
-        make_velo_micro_bias_line(velo_tracks, name="Hlt1VeloMicroBias"),
+        make_velo_micro_bias_line(velo_tracks, name="Hlt1VeloMicroBias", pre_scaler=0.001),
         make_rich_1_line(
             long_tracks, long_track_particles, name="Hlt1RICH1Alignment"),
         make_rich_2_line(
@@ -295,7 +295,8 @@ def default_bgi_activity_lines(decoded_velo, decoded_calo, prefilter=[]):
             make_velo_clusters_micro_bias_line(
                 decoded_velo,
                 name="Hlt1BGIVeloClustersMicroBias",
-                min_velo_clusters=1),
+                pre_scaler=1.0,
+                min_velo_clusters=100),
             prefilter=prefilter + [bx_NoBB]),
         line_maker(
             make_calo_digits_minADC_line(
@@ -392,7 +393,7 @@ def default_bgi_pvs_lines(pvs, velo_states, prefilter=[]):
             make_beam_line(
                 name="Hlt1BGIPVsCylIRBeamBeam",
                 beam_crossing_type=3,
-                pre_scaler=1.,
+                pre_scaler=1.0,
                 post_scaler=1.),
             prefilter=prefilter + [pvs_z_ir])
     ]
@@ -605,7 +606,7 @@ def setup_hlt1_node(enablePhysics=True,
             SMOG2_lines += [
                 line_maker(
                     make_passthrough_line(
-                        name="Hlt1Passthrough_PV_in_SMOG2", pre_scaler=0.004))
+                        name="Hlt1Passthrough_PV_in_SMOG2", pre_scaler=0.01))
             ]
 
             SMOG2_lines += default_smog2_lines(
