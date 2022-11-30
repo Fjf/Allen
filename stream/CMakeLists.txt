@@ -35,6 +35,7 @@ target_link_libraries(Stream
     Muon
     Combiners
     Examples
+    Quantum
     HostDataProvider
     HostInitEventList
     Backend
