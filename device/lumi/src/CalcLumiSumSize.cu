@@ -12,15 +12,14 @@
 #include "SelectionsEventModel.cuh"
 
 #include "LumiDefinitions.cuh"
-#include <Event/LumiSummaryOffsets_V2.h>
+#include "LumiSummaryOffsets.h"
 
 INSTANTIATE_ALGORITHM(calc_lumi_sum_size::calc_lumi_sum_size_t)
 
 void calc_lumi_sum_size::calc_lumi_sum_size_t::set_arguments_size(
   ArgumentReferences<Parameters> arguments,
   const RuntimeOptions&,
-  const Constants&,
-  const HostBuffers&) const
+  const Constants&) const
 {
   set_size<dev_lumi_sum_sizes_t>(arguments, first<host_number_of_events_t>(arguments));
 }
@@ -29,7 +28,6 @@ void calc_lumi_sum_size::calc_lumi_sum_size_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
   const Constants&,
-  HostBuffers&,
   const Allen::Context& context) const
 {
   Allen::memset_async<dev_lumi_sum_sizes_t>(arguments, 0, context);
