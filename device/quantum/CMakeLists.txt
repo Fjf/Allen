@@ -17,7 +17,6 @@ allen_add_device_library(Quantum SHARED
 
 find_package(Python COMPONENTS Interpreter Development)
 
-target_link_libraries(Quantum PRIVATE -lcustatevec)
+target_link_libraries(Quantum PRIVATE -lcustatevec ${Python_LIBRARIES})
 target_link_libraries(Quantum PRIVATE Backend HostEventModel EventModel Utils)
-
-target_include_directories(Quantum PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(Quantum PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${Python_INCLUDE_DIRS})

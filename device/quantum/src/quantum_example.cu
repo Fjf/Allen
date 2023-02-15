@@ -3,6 +3,8 @@
 \*****************************************************************************/
 #include "quantum_example.cuh"
 
+#include "Python.h"
+
 #if defined(TARGET_DEVICE_CUDA)
 #include <cuComplex.h>
 #include <custatevec.h>
@@ -24,15 +26,38 @@ void quantum::quantum_t::operator()(
   const Constants&,
   const Allen::Context& context) const
 {
+
+  /*
+   * Initialize python interpreter and load module
+   */
+  Py_Initialize();
+
+  PyObject* module_name = PyUnicode_FromString("quantum_circuit");
+  PyObject* module = PyImport_Import(module_name);
+  if (!module) {
+    std::cout << "quantum_circuit.py couldn't be imported. Ensure this file is in a directory findable by python. "
+                 "(e.g., in your PYTHONPATH)"
+              << std::endl;
+    return;
+  }
+
+  PyObject* module_dict = PyModule_GetDict(module);
+
   /*
    * Load Davides expected input into vector
    */
-
+  PyObject* result = PyList_New(0);
   for (int i = 0; i < 100; i++) {
-    //
+    PyList_Append(result, PyLong_FromLong(i));
   }
 
-  //  global_function(quantum)(dim3(1), property<block_dim_t>(), context)(arguments);
+  PyObject* func_args = PyTuple_New(1);
+  PyTuple_SetItem(func_args, 0, result);
+  PyObject* func = PyDict_GetItemString(module_dict, (char*) "circuit");
+  if (PyCallable_Check(func)) {
+    PyObject_CallObject(func, func_args);
+  }
+  Py_Finalize();
 
 #if defined(TARGET_DEVICE_CUDA)
   const int nIndexBits = 3;
