@@ -18,14 +18,13 @@ namespace quantum {
   };
 
   struct quantum_t : public DeviceAlgorithm, Parameters {
-    void set_arguments_size(ArgumentReferences<Parameters>, const RuntimeOptions&, const Constants&, const HostBuffers&)
-    const;
+    void set_arguments_size(ArgumentReferences<Parameters>, const RuntimeOptions&, const Constants&)
+      const;
 
     void operator()(
       const ArgumentReferences<Parameters>&,
       const RuntimeOptions&,
       const Constants&,
-      HostBuffers&,
       const Allen::Context& context) const;
 
   private:
@@ -33,5 +32,5 @@ namespace quantum {
     Property<block_dim_t> m_block_dim {this, {{32, 1, 1}}};
   };
 
-  __global__ void quantum(Parameters);
+  __device__ void quantum(Parameters);
 } // namespace quantum

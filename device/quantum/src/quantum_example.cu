@@ -3,13 +3,17 @@
 \*****************************************************************************/
 #include "quantum_example.cuh"
 
+#if defined(TARGET_DEVICE_CUDA)
+#include <cuComplex.h>
+#include <custatevec.h>
+#endif
+
 INSTANTIATE_ALGORITHM(quantum::quantum_t)
 
 void quantum::quantum_t::set_arguments_size(
   ArgumentReferences<Parameters> arguments,
   const RuntimeOptions&,
-  const Constants&,
-  const HostBuffers&) const
+  const Constants&) const
 {
   set_size<dev_saxpy_output_t>(arguments, first<host_number_of_events_t>(arguments));
 }
@@ -18,17 +22,116 @@ void quantum::quantum_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
   const Constants&,
-  HostBuffers&,
   const Allen::Context& context) const
 {
-  global_function(quantum)(dim3(1), property<block_dim_t>(), context)(arguments);
+  /*
+   * Load Davides expected input into vector
+   */
+
+  for (int i = 0; i < 100; i++) {
+    //
+  }
+
+  //  global_function(quantum)(dim3(1), property<block_dim_t>(), context)(arguments);
+
+#if defined(TARGET_DEVICE_CUDA)
+  const int nIndexBits = 3;
+  const int nSvSize = (1 << nIndexBits);
+  const int nTargets = 1;
+  const int nControls = 2;
+  const int adjoint = 0;
+
+  int targets[] = {2};
+  int controls[] = {0, 1};
+
+  cuDoubleComplex h_sv[] = {
+    {0.0, 0.0}, {0.0, 0.1}, {0.1, 0.1}, {0.1, 0.2}, {0.2, 0.2}, {0.3, 0.3}, {0.3, 0.4}, {0.4, 0.5}};
+  cuDoubleComplex h_sv_result[] = {
+    {0.0, 0.0}, {0.0, 0.1}, {0.1, 0.1}, {0.4, 0.5}, {0.2, 0.2}, {0.3, 0.3}, {0.3, 0.4}, {0.1, 0.2}};
+
+  cuDoubleComplex matrix[] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {0.0, 0.0}};
+
+  cuDoubleComplex* d_sv;
+  cudaMalloc((void**) &d_sv, nSvSize * sizeof(cuDoubleComplex));
+
+  cudaMemcpy(d_sv, h_sv, nSvSize * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
+
+  //--------------------------------------------------------------------------
+
+  // custatevec handle initialization
+  custatevecHandle_t handle;
+
+  custatevecCreate(&handle);
+
+  void* extraWorkspace = nullptr;
+  size_t extraWorkspaceSizeInBytes = 0;
+
+  // check the size of external workspace
+  custatevecApplyMatrixGetWorkspaceSize(
+    handle,
+    CUDA_C_64F,
+    nIndexBits,
+    matrix,
+    CUDA_C_64F,
+    CUSTATEVEC_MATRIX_LAYOUT_ROW,
+    adjoint,
+    nTargets,
+    nControls,
+    CUSTATEVEC_COMPUTE_64F,
+    &extraWorkspaceSizeInBytes);
+
+  // allocate external workspace if necessary
+  if (extraWorkspaceSizeInBytes > 0) cudaMalloc(&extraWorkspace, extraWorkspaceSizeInBytes);
+
+  // apply gate
+  custatevecApplyMatrix(
+    handle,
+    d_sv,
+    CUDA_C_64F,
+    nIndexBits,
+    matrix,
+    CUDA_C_64F,
+    CUSTATEVEC_MATRIX_LAYOUT_ROW,
+    adjoint,
+    targets,
+    nTargets,
+    controls,
+    nullptr,
+    nControls,
+    CUSTATEVEC_COMPUTE_64F,
+    extraWorkspace,
+    extraWorkspaceSizeInBytes);
+
+  // destroy handle
+  custatevecDestroy(handle);
+
+  //--------------------------------------------------------------------------
+
+  cudaMemcpy(h_sv, d_sv, nSvSize * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
+
+  bool correct = true;
+  for (int i = 0; i < nSvSize; i++) {
+    if ((h_sv[i].x != h_sv_result[i].x) || (h_sv[i].y != h_sv_result[i].y)) {
+      correct = false;
+      break;
+    }
+  }
+
+  if (correct)
+    printf("example PASSED\n");
+  else
+    printf("example FAILED: wrong result\n");
+
+  cudaFree(d_sv);
+  if (extraWorkspaceSizeInBytes) cudaFree(extraWorkspace);
+#endif
 }
 
 /**
  * @brief SAXPY example algorithm
  * @detail Calculates for every event y = a*x + x, where x is the number of velo tracks in one event
  */
-__global__ void quantum::quantum(quantum::Parameters parameters)
+__device__ void quantum::quantum(quantum::Parameters parameters)
 {
   const auto number_of_events = parameters.dev_number_of_events[0];
   for (unsigned event_number = threadIdx.x; event_number < number_of_events; event_number += blockDim.x) {

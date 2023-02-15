@@ -11,9 +11,13 @@ include_directories(${PROJECT_SOURCE_DIR}/main/include)
 include_directories(${PROJECT_SOURCE_DIR}/stream/gear/include)
 include_directories(${PROJECT_SOURCE_DIR}/stream/sequence/include)
 
-allen_add_device_library(Quantum STATIC
+allen_add_device_library(Quantum SHARED
         ${quantum_sources}
         )
+
+find_package(Python COMPONENTS Interpreter Development)
+
+target_link_libraries(Quantum PRIVATE -lcustatevec)
 target_link_libraries(Quantum PRIVATE Backend HostEventModel EventModel Utils)
 
 target_include_directories(Quantum PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
