@@ -28,8 +28,8 @@ with line_maker.bind(prefilter=prefilters):
                 ecal_clusters,
                 name="Hlt1SingleCaloCluster",
                 minEt=400,
-                pre_scaler=0.001)))
-    lines.append(line_maker(make_passthrough_line(pre_scaler=0.00003)))
+                pre_scaler=0.10)))
+    lines.append(line_maker(make_passthrough_line(pre_scaler=0.04)))
     lines.append(
         line_maker(
             make_odin_event_type_line(
