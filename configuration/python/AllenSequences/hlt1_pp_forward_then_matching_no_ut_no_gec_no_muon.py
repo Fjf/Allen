@@ -6,7 +6,8 @@ from AllenCore.generator import generate
 from AllenConf.enum_types import TrackingType
 
 hlt1_node = setup_hlt1_node(
-    EnableGEC=False,
-    tracking_type=TrackingType.MATCHING,
-    enableRateValidator=True)
+    tracking_type=TrackingType.FORWARD_THEN_MATCHING,
+    with_ut=False,
+    with_muon=False,
+    EnableGEC=False)
 generate(hlt1_node)
