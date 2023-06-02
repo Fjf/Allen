@@ -629,8 +629,9 @@ install(TARGETS AllenCommon EXPORT Allen
 if (DEFINED ENV{CPLUS_INCLUDE_PATH})
   target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPLUS_INCLUDE_PATH})
 elseif (DEFINED ENV{CPATH})
-  target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPATH})
+  #target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPATH})
 endif()
+target_include_directories(AllenCommon SYSTEM INTERFACE ${UMESIMD_INCLUDE_DIR})
 
 # Use std::filesystem or Boost filesystem depeding on availability
 add_library(AllenFS INTERFACE)
