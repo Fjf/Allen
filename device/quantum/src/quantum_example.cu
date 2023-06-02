@@ -2,8 +2,9 @@
 * (c) Copyright 2018-2020 CERN for the benefit of the LHCb Collaboration      *
 \*****************************************************************************/
 #include "quantum_example.cuh"
-
+#include <complex.h>
 #include "Python.h"
+#include "numpy/arrayobject.h"
 
 #if defined(TARGET_DEVICE_CUDA)
 #include <cuComplex.h>
@@ -19,7 +20,11 @@ void quantum::quantum_t::set_arguments_size(
 {
   set_size<dev_saxpy_output_t>(arguments, first<host_number_of_events_t>(arguments));
 }
-
+int init_np()
+{
+  import_array();
+  return 0;
+}
 void quantum::quantum_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
@@ -28,9 +33,24 @@ void quantum::quantum_t::operator()(
 {
 
   /*
+   * Initialize dummy input vector
+   */
+  std::vector<std::vector<double>> dummy_input = {
+    // x, y, z, module
+    {-0.013944499509696598, -0.0010376710133435548, 1, 1},
+    { 0.008785145497894378,  0.011203088748345181,  1, 1},
+    {-0.027888999019393197, -0.0020753420266871095, 2, 2},
+    { 0.017570290995788756,  0.022406177496690362,  2, 2},
+    {-0.04183349852908979,  -0.003113013040030664,  3, 3},
+    { 0.026355436493683135,  0.03360926624503554,   3, 3},
+  };
+
+  /*
    * Initialize python interpreter and load module
    */
   Py_Initialize();
+
+  int err = init_np();
 
   PyObject* module_name = PyUnicode_FromString("quantum_circuit");
   PyObject* module = PyImport_Import(module_name);
@@ -47,15 +67,27 @@ void quantum::quantum_t::operator()(
    * Load Davides expected input into vector
    */
   PyObject* result = PyList_New(0);
-  for (int i = 0; i < 100; i++) {
-    PyList_Append(result, PyLong_FromLong(i));
+  for (int i = 0; i < dummy_input.size(); i++) {
+    PyObject* hit = PyList_New(0);
+    for (int j = 0; j < 4; j++) {
+      PyList_Append(hit, PyFloat_FromDouble(dummy_input[i][j]));
+    }
+    PyList_Append(result, hit);
   }
 
   PyObject* func_args = PyTuple_New(1);
   PyTuple_SetItem(func_args, 0, result);
   PyObject* func = PyDict_GetItemString(module_dict, (char*) "circuit");
+  std::cout << PyCallable_Check(func) << std::endl;
   if (PyCallable_Check(func)) {
-    PyObject_CallObject(func, func_args);
+    printf("Calling python function\n");
+    PyObject* ret = PyObject_CallObject(func, func_args);
+    PyArrayObject* np_ret = reinterpret_cast<PyArrayObject*>(ret);
+    std::cout << np_ret << std::endl;
+    npy_intp width = PyArray_DIM(np_ret, 0);
+    npy_intp height = PyArray_DIM(np_ret, 1);
+    std::complex<double>* c_out = reinterpret_cast<std::complex<double>*>(PyArray_DATA(np_ret));
+    std::cout << c_out[0] << std::endl;
   }
   Py_Finalize();
 
