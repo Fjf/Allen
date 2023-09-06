@@ -8,29 +8,24 @@
 
 namespace quantum {
   struct Parameters {
+    MASK_INPUT(dev_event_list_t) dev_event_list;
     HOST_INPUT(host_number_of_events_t, unsigned) host_number_of_events;
-    DEVICE_INPUT(dev_number_of_events_t, unsigned) dev_number_of_events;
-    DEVICE_INPUT(dev_offsets_all_velo_tracks_t, unsigned) dev_atomics_velo;
-    DEVICE_INPUT(dev_offsets_velo_track_hit_number_t, unsigned) dev_velo_track_hit_number;
-    DEVICE_OUTPUT(dev_saxpy_output_t, float) dev_saxpy_output;
-    PROPERTY(saxpy_scale_factor_t, "saxpy_scale_factor", "scale factor a used in a*x + y", float) saxpy_scale_factor;
-    PROPERTY(block_dim_t, "block_dim", "block dimensions", DeviceDimensions) block_dim;
+    HOST_INPUT(host_mc_events_t, const MCEvents*) host_mc_events;
+    DEVICE_INPUT(dev_velo_cluster_container_t, char) dev_sorted_velo_cluster_container;
+    DEVICE_INPUT(dev_offsets_estimated_input_size_t, unsigned) dev_offsets_estimated_input_size;
+    DEVICE_INPUT(dev_module_cluster_num_t, unsigned) dev_module_cluster_num;
+    HOST_INPUT(host_total_number_of_velo_clusters_t, unsigned) host_total_number_of_velo_clusters;
   };
 
   struct quantum_t : public DeviceAlgorithm, Parameters {
-    void set_arguments_size(ArgumentReferences<Parameters>, const RuntimeOptions&, const Constants&)
-      const;
+    void set_arguments_size(ArgumentReferences<Parameters>, const RuntimeOptions&, const Constants&) const {}
 
     void operator()(
       const ArgumentReferences<Parameters>&,
       const RuntimeOptions&,
       const Constants&,
       const Allen::Context& context) const;
-
-  private:
-    Property<saxpy_scale_factor_t> m_saxpy_factor {this, 2.f};
-    Property<block_dim_t> m_block_dim {this, {{32, 1, 1}}};
   };
 
-  __device__ void quantum(Parameters);
+//  __device__ void quantum(Parameters);
 } // namespace quantum

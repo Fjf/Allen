@@ -632,9 +632,9 @@ install(TARGETS AllenCommon EXPORT Allen
 #Make sure extra search paths get included as system to avoid
 #warnings in external headers
 if (DEFINED ENV{CPLUS_INCLUDE_PATH})
-  target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPLUS_INCLUDE_PATH})
+#  target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPLUS_INCLUDE_PATH})
 elseif (DEFINED ENV{CPATH})
-  target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPATH})
+#  target_include_directories(AllenCommon SYSTEM INTERFACE $ENV{CPATH})
 endif()
 
 # Use std::filesystem or Boost filesystem depeding on availability
@@ -648,7 +648,6 @@ else()
 endif()
 
 message(STATUS "CMAKE CXX FLAGS: " ${CMAKE_CXX_FLAGS})
-
 
 # Add host library
 allen_add_host_library(HostCommon SHARED
