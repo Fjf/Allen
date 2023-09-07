@@ -13,6 +13,7 @@
 #ifndef ALLEN_STANDALONE
 #include "SelectionsEventModel.cuh"
 #include "Gaudi/Accumulators.h"
+#include "GaudiMonitoring.h"
 #endif
 
 namespace gather_selections {
@@ -58,7 +59,7 @@ namespace gather_selections {
       std::string);
   };
 
-  struct gather_selections_t : public HostAlgorithm, Parameters {
+  struct gather_selections_t : public BarrierAlgorithm, Parameters {
     void init();
 
     void set_arguments_size(ArgumentReferences<Parameters> arguments, const RuntimeOptions&, const Constants&) const;
@@ -76,19 +77,11 @@ namespace gather_selections {
     Property<names_of_active_lines_t> m_names_of_active_lines {this, ""};
 
 #ifndef ALLEN_STANDALONE
-  public:
-    void init_monitor();
-
-    void monitor_operator(const ArgumentReferences<Parameters>& arguments, gsl::span<bool>) const;
-
-    void monitor_postscaled_operator(const ArgumentReferences<Parameters>& arguments, const Constants&, gsl::span<bool>)
-      const;
-
   private:
     mutable std::vector<std::unique_ptr<Gaudi::Accumulators::Counter<>>> m_pass_counters;
     mutable std::vector<std::unique_ptr<Gaudi::Accumulators::Counter<>>> m_rate_counters;
-    void* histogram_line_passes;
-    void* histogram_line_rates;
+    gaudi_monitoring::Lockable_Histogram<>* histogram_line_passes;
+    gaudi_monitoring::Lockable_Histogram<>* histogram_line_rates;
 #endif
   };
 } // namespace gather_selections

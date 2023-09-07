@@ -44,18 +44,18 @@ namespace PatPV {
     float x = 0.;
     float y = 0.;
     float z = 0.;
-    __device__ __host__ XYZPoint(float m_x, float m_y, float m_z) : x(m_x), y(m_y), z(m_z) {};
-    __device__ __host__ XYZPoint() {};
+    __device__ __host__ XYZPoint(float m_x, float m_y, float m_z) : x(m_x), y(m_y), z(m_z) {}
+    __device__ __host__ XYZPoint() {}
   };
 
   class Vertex {
   public:
-    __device__ Vertex() {};
+    __device__ Vertex() {}
     float x = 0.;
     float y = 0.;
     float z = 0.;
-    float chi2;
-    int ndof;
+    float chi2 = 0.;
+    int ndof = 0;
 
     float cov00 = 0.;
     float cov10 = 0.;

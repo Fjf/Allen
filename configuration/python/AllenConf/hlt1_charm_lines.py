@@ -6,18 +6,23 @@ from AllenCore.algorithms import (d2kk_line_t, d2pipi_line_t, two_ks_line_t,
                                   two_track_mva_evaluator_t)
 from AllenConf.utils import initialize_number_of_events, mep_layout
 from AllenCore.generator import make_algorithm
+from AllenCore.configuration_options import is_allen_standalone
 
 
 def make_d2kk_line(long_tracks,
                    secondary_vertices,
-                   name="Hlt1D2KK",
+                   name='Hlt1D2KK_{hash}',
+                   enable_monitoring=True,
                    pre_scaler_hash_string=None,
-                   post_scaler_hash_string=None):
+                   post_scaler_hash_string=None,
+                   enable_tupling=False):
     number_of_events = initialize_number_of_events()
 
     return make_algorithm(
         d2kk_line_t,
         name=name,
+        enable_tupling=enable_tupling,
+        enable_monitoring=is_allen_standalone() and enable_monitoring,
         host_number_of_events_t=number_of_events["host_number_of_events"],
         host_number_of_svs_t=secondary_vertices["host_number_of_svs"],
         dev_particle_container_t=secondary_vertices[
@@ -28,14 +33,18 @@ def make_d2kk_line(long_tracks,
 
 def make_d2pipi_line(long_tracks,
                      secondary_vertices,
-                     name="Hlt1D2PiPi",
+                     name='Hlt1D2PiPi_{hash}',
+                     enable_monitoring=True,
                      pre_scaler_hash_string=None,
-                     post_scaler_hash_string=None):
+                     post_scaler_hash_string=None,
+                     enable_tupling=False):
     number_of_events = initialize_number_of_events()
 
     return make_algorithm(
         d2pipi_line_t,
         name=name,
+        enable_tupling=enable_tupling,
+        enable_monitoring=is_allen_standalone() and enable_monitoring,
         host_number_of_events_t=number_of_events["host_number_of_events"],
         host_number_of_svs_t=secondary_vertices["host_number_of_svs"],
         dev_particle_container_t=secondary_vertices[
@@ -46,7 +55,7 @@ def make_d2pipi_line(long_tracks,
 
 def make_two_ks_line(long_tracks,
                      secondary_vertices,
-                     name="Hlt1TwoKs",
+                     name='Hlt1TwoKs_{hash}',
                      pre_scaler_hash_string=None,
                      post_scaler_hash_string=None):
     number_of_events = initialize_number_of_events()
@@ -64,14 +73,14 @@ def make_two_ks_line(long_tracks,
 
 def make_two_track_mva_charm_xsec_line(long_tracks,
                                        secondary_vertices,
-                                       name="Hlt1TwoTrackMVACharmXSec",
+                                       name='Hlt1TwoTrackMVACharmXSec_{hash}',
                                        pre_scaler_hash_string=None,
                                        post_scaler_hash_string=None):
     number_of_events = initialize_number_of_events()
 
     two_track_mva_evaluator = make_algorithm(
         two_track_mva_evaluator_t,
-        name="two_track_mva_evaluator",
+        name='two_track_mva_evaluator_{hash}',
         dev_consolidated_svs_t=secondary_vertices["dev_consolidated_svs"],
         dev_sv_offsets_t=secondary_vertices["dev_sv_offsets"],
         host_number_of_svs_t=secondary_vertices["host_number_of_svs"])

@@ -10,16 +10,19 @@ gaudi_add_library(BinaryDumpers
                     src/lib/TestUTBoards.cpp
                     src/lib/Utils.cpp
                   LINK PUBLIC
+                    NonEventDataHeaders
+                    Gear
                     AllenCommon
                     HostCommon
                     EventModel
-                    Backend
-                    NonEventData
+                    AllenRuntime
+                    AllenLib
                     Gaudi::GaudiKernel
                     LHCb::DAQEventLib
                     LHCb::FTDAQLib
                     LHCb::MagnetLib
                     LHCb::FTDetLib
+                    LHCb::RecEvent
                     LHCb::MuonDAQLib)
 
 gaudi_add_module(BinaryDumpersModule
@@ -42,6 +45,7 @@ gaudi_add_module(BinaryDumpersModule
                    src/DumpUTLookupTables.cpp
                    src/DumpVPGeometry.cpp
                    src/PVDumper.cpp
+                   src/ProvideConstants.cpp
                    src/TestMuonTable.cpp
                    src/TransposeRawBanks.cpp
                    src/TESProducer.cpp
@@ -55,6 +59,7 @@ gaudi_add_module(BinaryDumpersModule
                    LHCb::MCEvent
                    LHCb::DAQEventLib
                    LHCb::DAQKernelLib
+                   LHCb::RecEvent
                    LHCb::VPDetLib
                    LHCb::UTDetLib
                    LHCb::UTKernelLib

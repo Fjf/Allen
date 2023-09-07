@@ -32,7 +32,8 @@ def mc_data_provider():
         host_mc_particle_sizes_t=host_mc_particle_banks.host_raw_sizes_t,
         host_mc_pv_banks_t=host_mc_pv_banks.host_raw_banks_t,
         host_mc_pv_offsets_t=host_mc_pv_banks.host_raw_offsets_t,
-        host_mc_pv_sizes_t=host_mc_pv_banks.host_raw_sizes_t)
+        host_mc_pv_sizes_t=host_mc_pv_banks.host_raw_sizes_t,
+        host_bank_version_t=host_mc_particle_banks.host_raw_bank_version_t)
 
 
 def velo_validation(velo_tracks, name="velo_validator"):
@@ -222,7 +223,8 @@ def pv_validation(pvs, name="pv_validator"):
         host_mc_events_t=mc_events.host_mc_events_t,
         dev_multi_final_vertices_t=pvs["dev_multi_final_vertices"],
         dev_number_of_multi_final_vertices_t=pvs[
-            "dev_number_of_multi_final_vertices"])
+            "dev_number_of_multi_final_vertices"],
+        pp_minNumTracksPerVertex=pvs["pp_minNumTracksPerVertex"])
 
 
 def rate_validation(lines, name="rate_validator"):

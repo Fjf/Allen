@@ -28,6 +28,7 @@
 #include <memory>
 #include <tuple>
 #include <stdio.h>
+#include <filesystem>
 
 #include <zmq/zmq.hpp>
 #include <ZeroMQ/IZeroMQSvc.h>
@@ -84,6 +85,7 @@ namespace {
  */
 int allen(
   std::map<std::string, std::string> options,
+  std::string_view config,
   Allen::NonEventData::IUpdater* updater,
   std::shared_ptr<IInputProvider> input_provider,
   OutputHandler* output_handler,
@@ -101,7 +103,6 @@ int allen(
   bool write_config = false;
   size_t reserve_mb = 1000;
   size_t reserve_host_mb = 200;
-  size_t reserve_host_temp_mb = 100;
 
   // Input file options
   int device_id = 0;
@@ -152,9 +153,6 @@ int allen(
     }
     else if (flag_in(flag, {"host-memory"})) {
       reserve_host_mb = atoi(arg.c_str());
-    }
-    else if (flag_in(flag, {"host-temp-memory"})) {
-      reserve_host_temp_mb = atoi(arg.c_str());
     }
     else if (flag_in(flag, {"v", "verbosity"})) {
       verbosity = atoi(arg.c_str());
@@ -210,7 +208,6 @@ int allen(
   logger::setVerbosity(verbosity);
 
   auto io_conf = Allen::io_configuration(n_slices, n_repetitions, number_of_threads);
-  auto const [json_configuration_file, run_from_json] = Allen::sequence_conf(options);
 
   // Set device for main thread
   auto [device_set, device_name, device_memory_alignment] = Allen::set_device(device_id, 0);
@@ -243,7 +240,7 @@ int allen(
   }
   //
   // Load constant parameters from JSON
-  configuration_reader = std::make_unique<ConfigurationReader>(json_configuration_file);
+  configuration_reader = std::make_unique<ConfigurationReader>(config);
 
   // Get the path to the parameter folder: different for standalone and Gaudi build
   // Only in case of standalone gitlab CI pipepline the parameters folder path is passed as runtime argument
@@ -255,10 +252,11 @@ int allen(
     info_cout << "Local copy of param files is used: " << folder_parameters << std::endl;
 #endif
   }
-  if (folder_parameters == "") {
-    error_cout << "Parameters file path is empty!" << std::endl;
-  }
+
   folder_parameters += "/data/";
+  if (!std::filesystem::is_directory(folder_parameters)) {
+    error_cout << "Parameters path " << folder_parameters << " could not be accessed." << std::endl;
+  }
 
   // Read the Muon catboost model
   muon_catboost_model_reader =
@@ -341,17 +339,14 @@ int allen(
     auto& sequence = streams.emplace_back(new Stream {configuration_reader->configured_sequence(),
                                                       print_memory_usage,
                                                       reserve_mb,
-                                                      reserve_host_temp_mb,
                                                       device_memory_alignment,
                                                       constants,
                                                       buffers_manager.get()});
     sequence->configure_algorithms(configuration);
   }
 
-  if (run_from_json) {
-    // Print configured sequence
-    streams.front()->print_configured_sequence();
-  }
+  // Print configured sequence
+  streams.front()->print_configured_sequence();
 
   // Interrogate stream configured sequence for validation algorithms
   const auto sequence_contains_validation_algorithms = streams.front()->contains_validation_algorithms();
@@ -1093,5 +1088,5 @@ loop_error:
     zmqSvc->send(*allen_control, (error_count ? "ERROR" : "NOT_READY"));
   }
 
-  return 0;
+  return error_count;
 }

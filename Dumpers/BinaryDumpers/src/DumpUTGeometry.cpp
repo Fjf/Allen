@@ -25,7 +25,11 @@ namespace {
 
   using namespace ranges;
 
+#ifdef USE_DD4HEP
+  const static std::string readoutLocation = "/world/BeforeMagnetRegion/UT:ReadoutMap";
+#else
   const static std::string readoutLocation = "/dd/Conditions/ReadoutConf/UT/ReadoutMap";
+#endif
 } // namespace
 
 namespace {
@@ -60,7 +64,7 @@ namespace {
       p0Y.reserve(number_of_sectors);
       p0Z.reserve(number_of_sectors);
 
-      det.applyToAllSectors([&](DeUTSector const& sector) {
+      det.applyToAllSectorsAllen([&](DeUTSector const& sector) {
         pitch.push_back(sector.pitch());
         cos.push_back(sector.cosAngle());
         dy.push_back(sector.get_dy());
@@ -95,10 +99,13 @@ namespace {
       DumpUtils::Writer output {};
 
       vector<uint32_t> stripsPerHybrids;
-      vector<uint32_t> stations;
-      vector<uint32_t> layers;
-      vector<uint32_t> detRegions;
       vector<uint32_t> sectors;
+      vector<uint32_t> modules;
+      vector<uint32_t> faces;
+      vector<uint32_t> staves;
+      vector<uint32_t> layers;
+      vector<uint32_t> sides;
+      vector<uint32_t> types;
       vector<uint32_t> chanIDs;
 
       UTDAQ::version UT_version; // Kernel/UTDAQDefinitions.h
@@ -126,19 +133,25 @@ namespace {
           for (typename std::decay<decltype(n_lanes_in_this_sector)>::type lane = 0; lane < n_lanes_in_this_sector;
                ++lane) {                     // old lingo: sectors, new lingo: lanes
             const auto s = sector_ids[lane]; // LHCb::UTChannelID
-            stations.push_back(s.station());
-            layers.push_back(s.layer());
-            detRegions.push_back(s.detRegion());
             sectors.push_back(s.sector());
+            modules.push_back(s.module());
+            faces.push_back(s.face());
+            staves.push_back(s.stave());
+            layers.push_back(s.layer());
+            sides.push_back(s.side());
+            types.push_back(s.type());
             chanIDs.push_back(s.channelID());
           }
           // If the number of lanes is less than 6, fill the remaining ones up to 6 with zeros
           // this is necessary to be compatible with the Allen UT boards layout
           for (uint32_t dummy_lane = n_lanes_in_this_sector; dummy_lane < n_lanes_max; ++dummy_lane) {
-            stations.push_back(0);
-            layers.push_back(0);
-            detRegions.push_back(0);
             sectors.push_back(0);
+            modules.push_back(0);
+            faces.push_back(0);
+            staves.push_back(0);
+            layers.push_back(0);
+            sides.push_back(0);
+            types.push_back(0);
             chanIDs.push_back(0);
           }
           ++currentBoardID;
@@ -151,10 +164,13 @@ namespace {
           for (; boardID != 0 && currentBoardID < boardID; ++currentBoardID) {
             stripsPerHybrids.push_back(0);
             for (auto i = 0u; i < n_lanes_max; ++i) {
-              stations.push_back(0);
-              layers.push_back(0);
-              detRegions.push_back(0);
               sectors.push_back(0);
+              modules.push_back(0);
+              faces.push_back(0);
+              staves.push_back(0);
+              layers.push_back(0);
+              sides.push_back(0);
+              types.push_back(0);
               chanIDs.push_back(0);
             }
           }
@@ -164,19 +180,25 @@ namespace {
           for (auto is = 0u; is < b->nSectors(); ++is) {
             auto s = std::get<0>(b->DAQToOfflineFull(
               0, UT_version, is * stripsPerHybrid)); // UTTell1Board::ExpandedChannelID (Kernel/UTTell1Board.h)
-            stations.push_back(s.station);
-            layers.push_back(s.layer);
-            detRegions.push_back(s.detRegion);
             sectors.push_back(s.sector);
+            modules.push_back(s.module);
+            faces.push_back(s.face);
+            staves.push_back(s.stave);
+            layers.push_back(s.layer);
+            sides.push_back(s.side);
+            types.push_back(s.type);
             chanIDs.push_back(s.chanID);
           }
           // If the number of sectors is less than 6, fill the remaining ones up to 6 with zeros
           // this is necessary to be compatible with the Allen UT boards layout
           for (auto is = b->nSectors(); is < n_lanes_max; ++is) {
-            stations.push_back(0);
-            layers.push_back(0);
-            detRegions.push_back(0);
             sectors.push_back(0);
+            modules.push_back(0);
+            faces.push_back(0);
+            staves.push_back(0);
+            layers.push_back(0);
+            sides.push_back(0);
+            types.push_back(0);
             chanIDs.push_back(0);
           }
           ++currentBoardID;
@@ -187,10 +209,13 @@ namespace {
         currentBoardID,
         static_cast<uint32_t>(UT_version),
         stripsPerHybrids,
-        stations,
-        layers,
-        detRegions,
         sectors,
+        modules,
+        faces,
+        staves,
+        layers,
+        sides,
+        types,
         chanIDs);
 
       data = output.buffer();

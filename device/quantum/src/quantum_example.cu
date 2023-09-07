@@ -13,18 +13,12 @@
 
 INSTANTIATE_ALGORITHM(quantum::quantum_t)
 
-void quantum::quantum_t::set_arguments_size(
-  ArgumentReferences<Parameters> arguments,
-  const RuntimeOptions&,
-  const Constants&) const
-{
-  set_size<dev_saxpy_output_t>(arguments, first<host_number_of_events_t>(arguments));
-}
 int init_np()
 {
   import_array();
   return 0;
 }
+
 void quantum::quantum_t::operator()(
   const ArgumentReferences<Parameters>& arguments,
   const RuntimeOptions&,
@@ -38,11 +32,11 @@ void quantum::quantum_t::operator()(
   std::vector<std::vector<double>> dummy_input = {
     // x, y, z, module
     {-0.013944499509696598, -0.0010376710133435548, 1, 1},
-    { 0.008785145497894378,  0.011203088748345181,  1, 1},
+    {0.008785145497894378, 0.011203088748345181, 1, 1},
     {-0.027888999019393197, -0.0020753420266871095, 2, 2},
-    { 0.017570290995788756,  0.022406177496690362,  2, 2},
-    {-0.04183349852908979,  -0.003113013040030664,  3, 3},
-    { 0.026355436493683135,  0.03360926624503554,   3, 3},
+    {0.017570290995788756, 0.022406177496690362, 2, 2},
+    {-0.04183349852908979, -0.003113013040030664, 3, 3},
+    {0.026355436493683135, 0.03360926624503554, 3, 3},
   };
 
   /*
@@ -54,6 +48,7 @@ void quantum::quantum_t::operator()(
 
   PyObject* module_name = PyUnicode_FromString("quantum_circuit");
   PyObject* module = PyImport_Import(module_name);
+  // TODO: Fix any errors imporitng not outputting erros here.
   if (!module) {
     std::cout << "quantum_circuit.py couldn't be imported. Ensure this file is in a directory findable by python. "
                  "(e.g., in your PYTHONPATH)"
@@ -86,6 +81,7 @@ void quantum::quantum_t::operator()(
     std::cout << np_ret << std::endl;
     npy_intp width = PyArray_DIM(np_ret, 0);
     npy_intp height = PyArray_DIM(np_ret, 1);
+    std::cout << "GOt matrix of size" << width << "x" << height << std::endl;
     std::complex<double>* c_out = reinterpret_cast<std::complex<double>*>(PyArray_DATA(np_ret));
     std::cout << c_out[0] << std::endl;
   }
@@ -184,19 +180,19 @@ void quantum::quantum_t::operator()(
 #endif
 }
 
-/**
- * @brief SAXPY example algorithm
- * @detail Calculates for every event y = a*x + x, where x is the number of velo tracks in one event
- */
-__device__ void quantum::quantum(quantum::Parameters parameters)
-{
-  const auto number_of_events = parameters.dev_number_of_events[0];
-  for (unsigned event_number = threadIdx.x; event_number < number_of_events; event_number += blockDim.x) {
-    Velo::Consolidated::ConstTracks velo_tracks {
-      parameters.dev_atomics_velo, parameters.dev_velo_track_hit_number, event_number, number_of_events};
-    const unsigned number_of_tracks_event = velo_tracks.number_of_tracks(event_number);
-
-    parameters.dev_saxpy_output[event_number] =
-      parameters.saxpy_scale_factor * number_of_tracks_event + number_of_tracks_event;
-  }
-}
+///**
+// * @brief SAXPY example algorithm
+// * @detail Calculates for every event y = a*x + x, where x is the number of velo tracks in one event
+// */
+//__device__ void quantum::quantum(quantum::Parameters parameters)
+//{
+//  const auto number_of_events = parameters.dev_number_of_events[0];
+//  for (unsigned event_number = threadIdx.x; event_number < number_of_events; event_number += blockDim.x) {
+//    Velo::Consolidated::ConstTracks velo_tracks {
+//      parameters.dev_atomics_velo, parameters.dev_velo_track_hit_number, event_number, number_of_events};
+//    const unsigned number_of_tracks_event = velo_tracks.number_of_tracks(event_number);
+//
+//    parameters.dev_saxpy_output[event_number] =
+//      parameters.saxpy_scale_factor * number_of_tracks_event + number_of_tracks_event;
+//  }
+//}

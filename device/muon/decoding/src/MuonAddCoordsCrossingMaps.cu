@@ -33,8 +33,8 @@ __global__ void muon_add_coords_crossing_maps_kernel(muon_add_coords_crossing_ma
 
     if (start_index == end_index) continue;
     const auto tile = Muon::MuonTileID(storage_tile_id[start_index]);
-    const auto layout1 = getLayout(parameters.dev_muon_raw_to_hits.get()->muonTables, tile)[0];
-    const auto layout2 = getLayout(parameters.dev_muon_raw_to_hits.get()->muonTables, tile)[1];
+    const auto layout1 = getLayout(parameters.dev_muon_raw_to_hits->muonTables, tile)[0];
+    const auto layout2 = getLayout(parameters.dev_muon_raw_to_hits->muonTables, tile)[1];
     bool pad = false;
 
     if constexpr (decoding_version == 3) {
@@ -127,7 +127,8 @@ void muon_add_coords_crossing_maps::muon_add_coords_crossing_maps_t::operator()(
   Allen::memset_async<dev_muon_compact_hit_t>(arguments, 0, context);
   Allen::memset_async<dev_atomics_index_insert_t>(arguments, 0, context);
 
-  const unsigned bank_version = first<host_raw_bank_version_t>(arguments);
+  const auto bank_version = first<host_raw_bank_version_t>(arguments);
+  if (bank_version < 0) return; // no Muon banks present in data
   auto kernel_fn =
     bank_version == 2 ? muon_add_coords_crossing_maps_kernel<2> : muon_add_coords_crossing_maps_kernel<3>;
 

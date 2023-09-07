@@ -5,6 +5,14 @@
 
 INSTANTIATE_ALGORITHM(VertexFit::fit_secondary_vertices_t)
 
+void VertexFit::fit_secondary_vertices_t::init()
+{
+#ifndef ALLEN_STANDALONE
+  histogram_nsvs = new gaudi_monitoring::Lockable_Histogram<> {
+    {this, "number_of_svs", "NSVs", {VertexFit::max_svs, 0, VertexFit::max_svs}}, {}};
+#endif
+}
+
 __global__ void create_sv_views(VertexFit::Parameters parameters)
 {
   // const unsigned event_number = parameters.dev_event_list[blockIdx.x];
@@ -50,7 +58,7 @@ void VertexFit::fit_secondary_vertices_t::set_arguments_size(
   set_size<dev_two_track_composites_view_t>(arguments, first<host_number_of_events_t>(arguments));
   set_size<dev_multi_event_composites_view_t>(arguments, 1);
   set_size<dev_multi_event_composites_ptr_t>(arguments, 1);
-  set_size<dev_sv_pv_ipchi2_t>(arguments, Associate::Consolidated::table_size(first<host_number_of_svs_t>(arguments)));
+  set_size<dev_sv_pv_ip_t>(arguments, Associate::Consolidated::table_size(first<host_number_of_svs_t>(arguments)));
   set_size<dev_sv_pv_tables_t>(arguments, first<host_number_of_events_t>(arguments));
   // TODO: Clean this up.
   set_size<dev_sv_fit_results_view_t>(arguments, first<host_number_of_events_t>(arguments));
@@ -63,13 +71,21 @@ void VertexFit::fit_secondary_vertices_t::operator()(
   const Constants&,
   const Allen::Context& context) const
 {
+  auto dev_histogram_nsvs = make_device_buffer<unsigned>(arguments, VertexFit::max_svs);
+  Allen::memset_async(dev_histogram_nsvs.data(), 0, dev_histogram_nsvs.size() * sizeof(unsigned), context);
+
   Allen::memset_async<dev_two_track_composite_view_t>(arguments, 0, context);
 
   global_function(fit_secondary_vertices)(dim3(size<dev_event_list_t>(arguments)), property<block_dim_t>(), context)(
-    arguments);
+    arguments, dev_histogram_nsvs.get());
 
   global_function(create_sv_views)(dim3(first<host_number_of_events_t>(arguments)), property<block_dim_t>(), context)(
     arguments);
+
+#ifndef ALLEN_STANDALONE
+  gaudi_monitoring::fill(
+    arguments, context, std::tuple {dev_histogram_nsvs.get(), histogram_nsvs, 0u, VertexFit::max_svs});
+#endif
 }
 
 __host__ __device__ void fill_sv_fit_result(
@@ -99,7 +115,9 @@ __host__ __device__ void fill_sv_fit_result(
   return;
 }
 
-__global__ void VertexFit::fit_secondary_vertices(VertexFit::Parameters parameters)
+__global__ void VertexFit::fit_secondary_vertices(
+  VertexFit::Parameters parameters,
+  gsl::span<unsigned> dev_histogram_nsvs)
 {
   const unsigned event_number = parameters.dev_event_list[blockIdx.x];
   const unsigned number_of_events = parameters.dev_number_of_events[0];
@@ -110,6 +128,8 @@ __global__ void VertexFit::fit_secondary_vertices(VertexFit::Parameters paramete
   const unsigned* event_svs_trk1_idx = parameters.dev_svs_trk1_idx + idx_offset;
   const unsigned* event_svs_trk2_idx = parameters.dev_svs_trk2_idx + idx_offset;
   const float* event_poca = parameters.dev_sv_poca + 3 * idx_offset;
+
+  if (n_svs < VertexFit::max_svs) ++dev_histogram_nsvs[n_svs];
 
   // Tracks.
   const auto long_track_particles = parameters.dev_long_track_particles->container(event_number);
@@ -125,10 +145,10 @@ __global__ void VertexFit::fit_secondary_vertices(VertexFit::Parameters paramete
   // SV -> PV table.
   const unsigned total_number_of_svs = parameters.dev_sv_offsets[number_of_events];
   // TODO: Don't use two different types of PV table.
-  Associate::Consolidated::Table sv_pv_ipchi2 {parameters.dev_sv_pv_ipchi2, total_number_of_svs};
-  Associate::Consolidated::EventTable pv_table = sv_pv_ipchi2.event_table(sv_offset, n_svs);
+  Associate::Consolidated::Table sv_pv_ip {parameters.dev_sv_pv_ip, total_number_of_svs};
+  Associate::Consolidated::EventTable pv_table = sv_pv_ip.event_table(sv_offset, n_svs);
   parameters.dev_sv_pv_tables[event_number] =
-    Allen::Views::Physics::PVTable {parameters.dev_sv_pv_ipchi2, sv_offset, total_number_of_svs, n_svs};
+    Allen::Views::Physics::PVTable {parameters.dev_sv_pv_ip, sv_offset, total_number_of_svs, n_svs};
 
   parameters.dev_sv_fit_results_view[event_number] = Allen::Views::Physics::SecondaryVertices {
     parameters.dev_sv_fit_results, parameters.dev_sv_offsets, event_number, number_of_events};
@@ -140,6 +160,7 @@ __global__ void VertexFit::fit_secondary_vertices(VertexFit::Parameters paramete
     tmp_sv.y = event_poca[3 * i_sv + 1];
     tmp_sv.z = event_poca[3 * i_sv + 2];
     tmp_sv.chi2 = -1;
+    tmp_sv.fdchi2 = -1;
     tmp_sv.minipchi2 = 0;
     auto i_track = event_svs_trk1_idx[i_sv];
     auto j_track = event_svs_trk2_idx[i_sv];

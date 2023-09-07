@@ -17,6 +17,9 @@ allen_add_device_library(Quantum SHARED
 
 find_package(Python COMPONENTS Interpreter Development)
 
-target_link_libraries(Quantum PRIVATE -lcustatevec ${Python_LIBRARIES})
-target_link_libraries(Quantum PRIVATE Backend HostEventModel EventModel Utils)
+if ("${TARGET_DEVICE}" STREQUAL "CUDA")
+    target_link_libraries(Quantum PRIVATE -lcustatevec)
+endif()
+target_link_libraries(Quantum PRIVATE ${Python_LIBRARIES})
 target_include_directories(Quantum PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> ${Python_INCLUDE_DIRS})
+target_link_libraries(Quantum PRIVATE Backend HostEventModel EventModel Utils)

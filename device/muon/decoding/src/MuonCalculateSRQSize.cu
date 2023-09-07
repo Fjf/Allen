@@ -68,7 +68,9 @@ __device__ void calculate_srq_size(
 
     bool corrupted = false;
     for (unsigned link = threadIdx.y; link < number_of_readout_fibers; link += blockDim.y) {
-      unsigned current_pointer = link_start_pointer;
+      unsigned current_pointer =
+        raw_bank.type == LHCb::RawBank::BankType::MuonError ? link_start_pointer + 3 : link_start_pointer;
+
       auto size_of_link = (static_cast<unsigned>(range_data[current_pointer] & 0xF0) >> 4) + 1;
       for (unsigned j = 0; j < link; ++j) {
         current_pointer += size_of_link;
@@ -93,7 +95,8 @@ __device__ void calculate_srq_size(
       auto regionOfLink = muon_raw_to_hits->muonGeometry->RegionOfLink(tell_number, pci_number, reroutered_link);
       auto quarterOfLink = muon_raw_to_hits->muonGeometry->QuarterOfLink(tell_number, pci_number, reroutered_link);
 
-      unsigned current_pointer = link_start_pointer;
+      unsigned current_pointer =
+        raw_bank.type == LHCb::RawBank::BankType::MuonError ? link_start_pointer + 3 : link_start_pointer;
       auto size_of_link = (static_cast<unsigned>(range_data[current_pointer] & 0xF0) >> 4) + 1;
 
       for (unsigned j = 0; j < link; ++j) {
@@ -164,8 +167,8 @@ __global__ void muon_calculate_srq_size_kernel(
 
   for (unsigned bank_index = threadIdx.x; bank_index < raw_event.number_of_raw_banks(); bank_index += blockDim.x) {
     const auto raw_bank = raw_event.raw_bank(bank_index);
-
-    if (raw_bank.type != LHCb::RawBank::BankType::Muon) continue; // skip invalid raw banks
+    if (raw_bank.type != LHCb::RawBank::BankType::Muon && raw_bank.type != LHCb::RawBank::BankType::MuonError)
+      continue; // skip invalid raw banks
 
     calculate_srq_size<decoding_version>(
       parameters.dev_muon_raw_to_hits, raw_bank, storage_station_region_quarter_sizes);
@@ -197,6 +200,8 @@ void muon_calculate_srq_size::muon_calculate_srq_size_t::operator()(
   const Constants& constants,
   const Allen::Context& context) const
 {
+  Allen::memset_async<dev_storage_station_region_quarter_sizes_t>(arguments, 0, context);
+  Allen::memset_async<dev_muon_raw_to_hits_t>(arguments, 0, context);
   const auto bank_version = first<host_raw_bank_version_t>(arguments);
   if (bank_version < 0) return; // no Muon banks present in data
 
@@ -206,9 +211,7 @@ void muon_calculate_srq_size::muon_calculate_srq_size_t::operator()(
   auto host_muonrawtohits = make_host_buffer<Muon::MuonRawToHits>(arguments, 1);
   host_muonrawtohits[0] = Muon::MuonRawToHits {constants.dev_muon_tables, constants.dev_muon_geometry};
 
-  Allen::copy_async(
-    get<dev_muon_raw_to_hits_t>(arguments), host_muonrawtohits.get(), context, Allen::memcpyHostToDevice);
-  Allen::memset_async<dev_storage_station_region_quarter_sizes_t>(arguments, 0, context);
+  Allen::copy(get<dev_muon_raw_to_hits_t>(arguments), host_muonrawtohits.get(), context, Allen::memcpyHostToDevice);
 
   auto kernel_fn = bank_version == 2 ? (runtime_options.mep_layout ? muon_calculate_srq_size_kernel<2, true> :
                                                                      muon_calculate_srq_size_kernel<2, false>) :

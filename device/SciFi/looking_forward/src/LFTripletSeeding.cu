@@ -541,8 +541,8 @@ __device__ void triplet_seeding(
       padded_size,
       shared_xs_size,
       shared_xs,
-      parameters.dev_global_xs.get(),
-      parameters.dev_global_count.get(),
+      parameters.dev_global_xs.data(),
+      parameters.dev_global_count.data(),
       [&](half_t* __restrict__ xs) {
         for (int i = 0; i < LookingForward::number_of_x_layers; ++i) {
           for (unsigned i_hit = threadIdx.x * blockDim.y + threadIdx.y;
@@ -584,8 +584,8 @@ __device__ void triplet_seeding(
             }
           }();
 
-          const auto velo_tx = velo_state.tx();
-          const auto x_at_z_magnet = velo_state.x() + (LookingForward::z_magnet - velo_state.z()) * velo_tx;
+          const auto velo_tx = velo_state.tx;
+          const auto x_at_z_magnet = velo_state.x + (LookingForward::z_magnet - velo_state.z) * velo_tx;
 
           for (unsigned i_seed = 0; i_seed < n_seeds; ++i_seed) {
             const unsigned left_right_side = i_seed / 2;
@@ -669,7 +669,7 @@ __device__ void triplet_seeding(
                 z2,
                 qop,
                 (parameters.dev_input_states + current_input_track_index)->tx,
-                velo_state.tx(),
+                velo_state.tx,
                 x_at_z_magnet,
                 xs,
                 shared_store + threadIdx.y * maximum_number_of_triplets_per_warp,

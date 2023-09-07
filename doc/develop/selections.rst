@@ -197,7 +197,7 @@ header.
       MASK_INPUT(dev_event_list_t);
       HOST_OUTPUT(host_decisions_size_t, unsigned), host_decisions_size;
       HOST_OUTPUT(host_post_scaler_t, float) host_post_scaler;
-      HOST_OUTPUT(host_post_scaler_hash_t, uint32_t) host_post_scaler_hash;      
+      HOST_OUTPUT(host_post_scaler_hash_t, uint32_t) host_post_scaler_hash;
       PROPERTY(pre_scaler_t, "pre_scaler", "Pre-scaling factor", float) pre_scaler;
       PROPERTY(post_scaler_t, "post_scaler", "Post-scaling factor", float) post_scaler;
       PROPERTY(pre_scaler_hash_string_t, "pre_scaler_hash_string", "Pre-scaling hash string", std::string)
@@ -544,6 +544,7 @@ The source file looks as follows:
 
 It is important that the return type of `get_input` is the same as the input type of `select`.
 
+
 Adding your selection to the Allen sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 After creating the selection source code, the selection can either be added to
@@ -726,7 +727,7 @@ First define the line algorithm, for example within `hlt1_inclusive_hadron_lines
         host_number_of_reconstructed_scifi_tracks_t=forward_tracks[
           "host_number_of_reconstructed_scifi_tracks"],
         dev_particle_container_t=long_track_particles[
-          "dev_multi_event_basic_particles"],          
+          "dev_multi_event_basic_particles"],
         pre_scaler_hash_string=pre_scaler_hash_string,
         post_scaler_hash_string=post_scaler_hash_string)
 
@@ -785,6 +786,82 @@ The `custom_hlt1_node` combines the lines with the DecReport algorithm to setup 
 Notice that all the values of the properties have to be given in a string even if the type of the property is an `int` or a `float`.
 Now, you should be able to build and run the newly generated `custom_hlt1`.
 
+Monitoring Lines with ROOT
+------------------------------
+Lines can be monitored simply by adding a monitor function which fills outputs which are then written out to a tree using the ROOTService.
+
+In addition, your selection algorithm should contain an additional property::
+
+  PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
+
+The property should be defaulted to false::
+
+  Property<enable_monitoring_t> m_enable_monitoring {this, false};
+
+In this example we want to monitor the `Mass` and `pT` of the Secondary Vertices selected by a line meant for the decay Ks-> pi+ pi- .
+
+First we need to add the additional `Parameters` that will carry our arrays to our `Line` header:
+
+.. code-block:: c++
+
+  namespace kstopipi_line {
+   struct Parameters {
+     (...)
+
+     DEVICE_OUTPUT(sv_masses_t, float) sv_masses;
+     DEVICE_OUTPUT(pt_t, float) pt;
+
+     PROPERTY(enable_monitoring_t, "enable_monitoring", "Enable line monitoring", bool) enable_monitoring;
+    };
+  };
+
+Your selection algorithm should define an additional tuple type that contains the types of the quantities to monitor, so in this example::
+
+.. code-block:: c++
+
+ using monitoring_types = std::tuple<pt_t, sv_masses_t>;
+
+The tuple type is a convenient way to store a parameter pack, which is then used internally (see `Line.cuh <https://gitlab.cern.ch/lhcb/Allen/-/blob/master/device/selections/line_types/include/Line.cuh>`_ for details) to handle the initialisation of the containers and the transport of the arrays to the nTuple.
+Two useful additional pieces of information to include in the nTuple are the event and run number.
+These are automatically filled per candidate if the tuple of monitoring types includes the types runNo_t and evtNo_t, which should be declared as DEVICE_OUTPUTs of type uint64_t and unsigned for runNo and evtNo, respectively.
+So in this example, we would add
+
+.. code-block:: c++
+
+  struct Parameters {
+    (...)
+    DEVICE_OUTPUT(evtNo_t, uint64_t) evtNo;
+    DEVICE_OUTPUT(runNo_t, unsigned) runNo;
+  };
+
+and the monitoring types becomes
+
+.. code-block:: c++
+
+  using monitoring_types = std::tuple<pt_t, sv_masses_t, evtNo_t, runNo_t>;
+
+After all of the values we wish to monitor have been declared,
+then we set up the `monitor` function that will be handled by the kernel in order to retrieve the information that we want to monitor:
+
+.. code-block:: c++
+
+   __device__ void kstopipi_line::kstopipi_line_t::monitor(
+     const Parameters& parameters,
+     std::tuple<const Allen::Views::Physics::CompositeParticle&> input,
+     unsigned index,
+     bool sel) {
+       const auto& vertex = std::get<0>(input);
+       if (sel) {
+         parameters.sv_masses[index] = vertex.m(139.57, 139.57);
+         parameters.pt[index] = vertex.pt();
+       }
+     }
+
+The source files that implement these examples correspond to the `KsToPiPiLine`  and are the following:
+
+* `Line Header <https://gitlab.cern.ch/lhcb/Allen/-/blob/master/device/selections/lines/inclusive_hadron/include/KsToPiPiLine.cuh>`_
+* `Line Implementation <https://gitlab.cern.ch/lhcb/Allen/-/blob/master/device/selections/lines/inclusive_hadron/src/KsToPiPiLine.cu>`_
+
 
 ML models in selections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -794,6 +871,6 @@ TwoTrackMVA
 
 The training procedure for the TwoTrackMVA is found in `https://github.com/niklasnolte/HLT_2Track`.
 
-The event types used for training can be seen in `here <https://github.com/niklasnolte/HLT_2Track/blob/main/hlt2trk/utils/config.py#L384>`_.
+The event types used for training can be seen at the end `here <https://gitlab.cern.ch/lhcb-rta/HLT_2Track/-/blob/47bd5898cb4064fabbde3da87c09ebe87d31d0c1/hlt2trk/utils/config.py>`_.
 
 The model exported from there goes into `Allen/input/parameters/two_track_mva_model.json <https://gitlab.cern.ch/lhcb-datapkg/ParamFiles/-/blob/master/data/allen_two_track_mva_model_June22.json>`_

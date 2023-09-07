@@ -9,16 +9,18 @@ from AllenConf.validators import rate_validation
 from AllenConf.calo_reconstruction import decode_calo
 from AllenConf.hlt1_photon_lines import make_single_calo_cluster_line
 from AllenConf.hlt1_reconstruction import hlt1_reconstruction
-from AllenConf.hlt1_monitoring_lines import make_calo_digits_minADC_line, make_odin_event_type_line, make_velo_micro_bias_line
+from AllenConf.hlt1_monitoring_lines import make_calo_digits_minADC_line, make_odin_event_type_line, make_odin_event_and_orbit_line, make_velo_micro_bias_line
 from AllenConf.hlt1_calibration_lines import make_passthrough_line
 from AllenConf.odin import make_bxtype, odin_error_filter
 from AllenConf.lumi_reconstruction import lumi_reconstruction
 
-reconstructed_objects = hlt1_reconstruction()
+reconstructed_objects = hlt1_reconstruction(
+    algorithm_name='calo_plus_passthrough_sequence')
 ecal_clusters = reconstructed_objects["ecal_clusters"]
 
 lines = []
 lumiline_name = "Hlt1ODINLumi"
+lumilinefull_name = "Hlt1ODIN1kHzLumi"
 
 prefilters = [odin_error_filter("odin_error_filter")]
 with line_maker.bind(prefilter=prefilters):
@@ -31,6 +33,13 @@ with line_maker.bind(prefilter=prefilters):
         line_maker(
             make_odin_event_type_line(
                 name=lumiline_name, odin_event_type='Lumi')))
+    lines.append(
+        line_maker(
+            make_odin_event_and_orbit_line(
+                name=lumilinefull_name,
+                odin_event_type='Lumi',
+                odin_orbit_modulo=30,
+                odin_orbit_remainder=1)))
 
 line_algorithms = [tup[0] for tup in lines]
 
@@ -58,6 +67,7 @@ lumi_node = CompositeNode(
         gather_selections=gather_selections,
         lines=line_algorithms,
         lumiline_name=lumiline_name,
+        lumilinefull_name=lumilinefull_name,
         with_muon=False)["algorithms"],
     NodeLogic.NONLAZY_AND,
     force_order=False)

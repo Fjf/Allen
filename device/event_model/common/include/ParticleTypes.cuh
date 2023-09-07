@@ -21,6 +21,7 @@
 #include "UTConsolidated.cuh"
 #include "SciFiConsolidated.cuh"
 #include "PV_Definitions.cuh"
+#include "MassDefinitions.h"
 
 namespace Allen {
   namespace Views {
@@ -485,9 +486,9 @@ namespace Allen {
           return sqrtf(energy * energy - vertex().p2());
         }
 
-        __host__ __device__ float mdipi() const { return m12(mPi, mPi); }
+        __host__ __device__ float mdipi() const { return m12(Allen::mPi, Allen::mPi); }
 
-        __host__ __device__ float mdimu() const { return m12(mMu, mMu); }
+        __host__ __device__ float mdimu() const { return m12(Allen::mMu, Allen::mMu); }
 
         __host__ __device__ float fdchi2() const
         {
@@ -526,10 +527,32 @@ namespace Allen {
           return sqrtf(dx * dx + dy * dy + dz * dz);
         }
 
+        __host__ __device__ float ctau() const
+        {
+          if (!has_pv()) return -1.f;
+          return m() * fd() / vertex().p();
+        }
+
+        __host__ __device__ float ctau(const float mass) const
+        {
+          if (!has_pv()) return -1.f;
+          return mass * fd() / vertex().p();
+        }
+
         __host__ __device__ float dz() const
         {
           if (!has_pv()) return 0.f;
           return vertex().z() - pv().position.z;
+        }
+
+        __host__ __device__ float drho() const
+        {
+          if (!has_pv()) return -1.f;
+          const auto primary = pv();
+          const auto vrt = vertex();
+          const float dx = vrt.x() - primary.position.x;
+          const float dy = vrt.y() - primary.position.y;
+          return sqrtf(dx * dx + dy * dy);
         }
 
         __host__ __device__ float eta() const
@@ -708,6 +731,12 @@ namespace Allen {
           const float vy = -txA + txB;
           const float vz = txA * tyB - txB * tyA;
           return (vx * vx + vy * vy + vz * vz) / ((txA * txA + tyA * tyA + 1.f) * (txB * txB + tyB * tyB + 1.f));
+        }
+
+        __host__ __device__ MiniState get_state() const
+        {
+          const auto v = vertex();
+          return MiniState(v.x(), v.y(), v.z(), v.px() / v.pz(), v.py() / v.pz());
         }
       };
 

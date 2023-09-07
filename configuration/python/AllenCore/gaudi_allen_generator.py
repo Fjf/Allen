@@ -45,10 +45,9 @@ def allen_runtime_options(rawbank_list, filename="allen_monitor.root"):
             rawbank_list=rawbank_list))
 
 
-@configurable
-def get_constants(consumer_types=["VP", "UT", "FTCluster", "ECal", "Muon"]):
+def get_constants():
     from PyConf.application import make_odin
-    return ProvideConstants(ODINLocation=make_odin(), BankTypes=consumer_types)
+    return ProvideConstants(ODINLocation=make_odin())
 
 
 # Gaudi configuration wrapper
@@ -61,6 +60,8 @@ def make_algorithm(algorithm, name, *args, **kwargs):
         rawbank_list = ["ODIN"]
     elif bank_type == "ECal":
         rawbank_list = ["Calo", "EcalPacked"]
+    elif bank_type == "VP":
+        rawbank_list = ["VP", "VPRetinaCluster"]
     elif bank_type:
         rawbank_list = [bank_type]
 
@@ -68,7 +69,7 @@ def make_algorithm(algorithm, name, *args, **kwargs):
     cs = get_constants()
 
     dev_event_list = host_init_event_list_t(
-        name="make_event_list", runtime_options_t=rto,
+        name="make_event_list_{hash}", runtime_options_t=rto,
         constants_t=cs).dev_event_list_output_t
     # Pass dev_event_list to inputs that are of type dev_event_list
     event_list_names = [

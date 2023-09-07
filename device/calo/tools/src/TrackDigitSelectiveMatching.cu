@@ -48,10 +48,6 @@ __global__ void track_digit_selective_matching::track_digit_selective_matching(
   const unsigned n_long_tracks = long_tracks.size();
   const unsigned event_offset = long_tracks.offset();
 
-  // SciFi tracks
-  const auto scifi_tracks_view = parameters.dev_scifi_tracks_view[event_number];
-  const auto scifi_states = parameters.dev_scifi_states + scifi_tracks_view.offset();
-
   // Get ECAL digits
   auto ecal_geometry = CaloGeometry(raw_ecal_geometry);
   const unsigned digits_offset = parameters.dev_ecal_digits_offsets[event_number];
@@ -60,10 +56,8 @@ __global__ void track_digit_selective_matching::track_digit_selective_matching(
   // Loop over the long tracks in parallel
   for (unsigned track_index = threadIdx.x; track_index < n_long_tracks; track_index += blockDim.x) {
     const auto long_track = long_tracks.track(track_index);
-    const auto scifi_track = long_track.track_segment<Allen::Views::Physics::Track::segment::scifi>();
-    const auto scifi_track_id = scifi_track.track_index();
     // SciFi state
-    const auto& scifi_state = scifi_states[scifi_track_id];
+    const auto& scifi_state = parameters.dev_scifi_states[event_offset + track_index];
 
     // Get z positions of intersection of the track and front, showermax and back planes
     float z_front = ecal_geometry.getZFromTrackToCaloplaneIntersection(scifi_state, 0);

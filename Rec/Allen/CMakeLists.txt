@@ -13,23 +13,21 @@ include(GenerateConfiguration)
 
 gaudi_add_module(AllenWrapper
                  SOURCES
-                   src/GaudiAllenPVsToRecVertexV2.cpp
-                   src/GaudiAllenUTToV2Tracks.cpp
+                   src/GaudiAllenPVsToPrimaryVertexContainer.cpp
                    src/GaudiAllenCaloToCaloClusters.cpp
                    src/GaudiAllenCountAndDumpLineDecisions.cpp
-                   src/GaudiAllenForwardToV2Tracks.cpp
-                   src/GaudiAllenSeedAndMatchNoUTToV2Tracks.cpp
+                   src/GaudiAllenFilterEventsLineDecisions.cpp
                    src/GaudiAllenReportsToRawEvent.cpp
                    src/GaudiAllenLumiSummaryToRawEvent.cpp
                    src/GaudiAllenSVsToRecVertexV2.cpp
-                   src/GaudiAllenVeloToV2Tracks.cpp
-                   src/ProvideConstants.cpp
+                   src/GaudiAllenTrackViewsToV3Tracks.cpp
                    src/AllenROOTService.cpp
                    src/ProvideRuntimeOptions.cpp
-                   src/TestAllenCaloDigits.cpp
-                   src/TestMuonHits.cpp
-                   src/TestUTHits.cpp
-                   src/TestFTClusters.cpp
+                   src/CompareRecAllenCaloDigits.cpp
+                   src/CompareRecAllenMuonHits.cpp
+		   src/CompareRecAllenUTHitsMCCheck.cpp
+                   src/CompareRecAllenFTClusters.cpp
+                   src/CompareRecAllenVPHits.cpp
                    src/TestVeloClusters.cpp
                  LINK
                    AllenLib
@@ -38,8 +36,8 @@ gaudi_add_module(AllenWrapper
                    HostCommon
                    HostEventModel
                    HostRoutingBits
-                   NonEventData
                    TrackChecking
+                   PV_beamline
                    PVChecking
                    CheckClustering
                    SelChecking
@@ -56,12 +54,14 @@ gaudi_add_module(AllenWrapper
                    Gaudi::GaudiAlgLib
                    LHCb::DAQEventLib
                    LHCb::DAQKernelLib
+                   LHCb::RecEvent
                    LHCb::VPDetLib
                    LHCb::UTDetLib
                    LHCb::UTKernelLib
                    LHCb::CaloDetLib
                    LHCb::FTDetLib
                    LHCb::MCEvent
+		               LHCb::RecEvent
                    Rec::PrKernel)
 
 target_include_directories(AllenWrapper PRIVATE ${PROJECT_BINARY_DIR}/code_generation)
@@ -77,25 +77,28 @@ gaudi_add_module(AllenAlgorithms
                    ${WRAPPED_ALGORITHM_SOURCES}
                  LINK
                    AllenLib
-       Backend
-           Stream
-         HostCommon
-   		   HostEventModel
-   		   HostRoutingBits
-           NonEventData
-           TrackChecking
-           PVChecking
-           CheckClustering
-           SelChecking
-           Monitoring
-           HostCombiners
-           EventModel
-           Gear
-           mdf
-           LHCbEvent
+                   Backend
+                   CheckClustering
                    EventModel
-       MuonCommon
-       WrapperInterface
+                   Gear
+                   HostCombiners
+                   HostCommon
+                   HostEventModel
+                   HostRoutingBits
+                   LHCbEvent
+                   Monitoring
+                   MuonCommon
+                   NonEventData
+                   PV_beamline
+                   PVChecking
+                   SelChecking
+                   SelectionsHeaders
+                   Stream
+                   TrackChecking
+                   UTCommon
+                   Utils
+                   WrapperInterface
+                   mdf
                    Gaudi::GaudiAlgLib
                    LHCb::DAQEventLib
                    LHCb::DAQKernelLib

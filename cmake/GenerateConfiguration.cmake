@@ -15,6 +15,7 @@ set(ALLEN_PARSER_DIR ${PROJECT_SEQUENCE_DIR}/parser)
 set(ALGORITHMS_OUTPUTFILE ${ALLEN_ALGORITHMS_DIR}/allen_standalone_algorithms.py)
 set(PARSED_ALGORITHMS_OUTPUTFILE ${CODE_GENERATION_DIR}/parsed_algorithms.pickle)
 set(ALGORITHMS_GENERATION_SCRIPT ${PROJECT_SOURCE_DIR}/configuration/parser/ParseAlgorithms.py)
+set(DEFAULT_PROPERTIES_SRC ${PROJECT_SOURCE_DIR}/configuration/src/default_properties.cpp)
 
 include_guard(GLOBAL)
 
@@ -23,33 +24,13 @@ file(MAKE_DIRECTORY ${ALLEN_PARSER_DIR})
 file(MAKE_DIRECTORY ${ALLEN_GENERATED_INCLUDE_FILES_DIR})
 file(MAKE_DIRECTORY ${ALLEN_ALGORITHMS_DIR})
 
-set(MINIMUM_REQUIRED_LIBCLANG_VERSION 9)
-if(LIBCLANG_FOUND AND "${LIBCLANG_MAJOR_VERSION}" LESS ${MINIMUM_REQUIRED_LIBCLANG_VERSION})
-  message(STATUS "libClang version found (${LIBCLANG_VERSION}) does not meet minimum version requirement (${MINIMUM_REQUIRED_LIBCLANG_VERSION})")
-endif()
-
-if(NOT LIBCLANG_FOUND OR "${LIBCLANG_MAJOR_VERSION}" LESS ${MINIMUM_REQUIRED_LIBCLANG_VERSION})
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    # In macOS, libClang typically exists even if llvm-config does not exist.
-    # Attempt default directory
-    set(LIBCLANG_LIBDIR /Library/Developer/CommandLineTools/usr/lib)
-    set(LIBCLANG_ALTERNATIVE_FOUND ON)
-    message(STATUS "Using predefined macos libclang directory")
-  elseif(EXISTS /cvmfs/sft.cern.ch)
-    # As a last resource, try a hard-coded directory in cvmfs
-    set(LIBCLANG_LIBDIR /cvmfs/sft.cern.ch/lcg/releases/clang/11.1.0-b24ba/x86_64-centos7/lib)
-    set(LIBCLANG_ALTERNATIVE_FOUND ON)
-    message(STATUS "Using predefined CVMFS libclang directory")
-  else()
-    message(FATAL_ERROR "No suitable libClang installation found. "
-                        "You may provide a custom path to llvm-config by setting LLVM_CONFIG manually")
-  endif()
-endif()
-
-message(STATUS "Found libclang at ${LIBCLANG_LIBDIR}")
-
 # We will invoke the parser a few times, set its required environment in a variable
-set(PARSER_ENV PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_SOURCE_DIR}/scripts LD_LIBRARY_PATH=${LIBCLANG_LIBDIR}:$ENV{LD_LIBRARY_PATH})
+# Add the scripts folder only if we are invoking with a CMAKE_TOOLCHAIN_FILE
+if(CMAKE_TOOLCHAIN_FILE)
+  set(PARSER_ENV PYTHONPATH=$ENV{PYTHONPATH}:${PROJECT_SOURCE_DIR}/scripts LD_LIBRARY_PATH=${LIBCLANG_LIBDIR}:$ENV{LD_LIBRARY_PATH})
+else()
+  set(PARSER_ENV PYTHONPATH=$ENV{PYTHONPATH}:${LIBCLANG_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages LD_LIBRARY_PATH=${LIBCLANG_LIBDIR}:$ENV{LD_LIBRARY_PATH})
+endif()
 
 # Parse Allen algorithms
 # Parsing should depend on ALL algorithm headers (which include the Parameters section)
@@ -79,31 +60,40 @@ add_custom_command(
   DEPENDS "${PROJECT_SOURCE_DIR}/configuration/python/AllenConf" "${PROJECT_SOURCE_DIR}/configuration/python/AllenCore")
 add_custom_target(generate_conf_core DEPENDS "${SEQUENCE_DEFINITION_DIR}" "${ALLEN_CORE_DIR}")
 
+# Generate Allen AlgorithmDB
+add_custom_command(
+  OUTPUT "${CODE_GENERATION_DIR}/AlgorithmDB.cpp"
+  COMMENT "Generating AlgorithmDB"
+  COMMAND ${CMAKE_COMMAND} -E env ${PARSER_ENV} ${Python_EXECUTABLE} ${ALGORITHMS_GENERATION_SCRIPT} --generate db --filename "${CODE_GENERATION_DIR}/AlgorithmDB.cpp" --parsed_algorithms "${PARSED_ALGORITHMS_OUTPUTFILE}"
+  WORKING_DIRECTORY ${ALLEN_PARSER_DIR}
+  DEPENDS "${PARSED_ALGORITHMS_OUTPUTFILE}")
+add_custom_target(algorithm_db_generation DEPENDS "${CODE_GENERATION_DIR}/AlgorithmDB.cpp")
+add_library(algorithm_db OBJECT "${CODE_GENERATION_DIR}/AlgorithmDB.cpp")
+add_dependencies(algorithm_db algorithm_db_generation)
+target_link_libraries(algorithm_db
+  PUBLIC
+    EventModel
+    HostEventModel
+    Backend
+    AllenCommon
+    Gear)
+
+add_executable(default_properties ${DEFAULT_PROPERTIES_SRC})
+target_link_libraries(default_properties PRIVATE AllenLib HostEventModel EventModel)
+
 # Generate allen standalone algorithms file
 add_custom_command(
   OUTPUT "${ALGORITHMS_OUTPUTFILE}"
   COMMAND
-    ${CMAKE_COMMAND} -E env ${PARSER_ENV} ${Python_EXECUTABLE} ${ALGORITHMS_GENERATION_SCRIPT} --generate views --filename "${ALGORITHMS_OUTPUTFILE}" --parsed_algorithms "${PARSED_ALGORITHMS_OUTPUTFILE}" &&
+    ${CMAKE_COMMAND} -E env ${PARSER_ENV} ${Python_EXECUTABLE} ${ALGORITHMS_GENERATION_SCRIPT} --generate views --filename "${ALGORITHMS_OUTPUTFILE}" --parsed_algorithms "${PARSED_ALGORITHMS_OUTPUTFILE}" --default_properties $<TARGET_FILE:default_properties> &&
     ${CMAKE_COMMAND} -E touch ${ALLEN_ALGORITHMS_DIR}/__init__.py
   WORKING_DIRECTORY ${ALLEN_PARSER_DIR}
-  DEPENDS "${PARSED_ALGORITHMS_OUTPUTFILE}" "${SEQUENCE_DEFINITION_DIR}" "${ALLEN_CORE_DIR}")
+  DEPENDS "${PARSED_ALGORITHMS_OUTPUTFILE}" "${SEQUENCE_DEFINITION_DIR}" "${ALLEN_CORE_DIR}" default_properties)
 add_custom_target(generate_algorithms_view DEPENDS "${ALGORITHMS_OUTPUTFILE}")
 install(FILES "${ALGORITHMS_OUTPUTFILE}" DESTINATION python/AllenAlgorithms)
 
-# Generate Allen AlgorithmDB
-add_custom_command(
-  OUTPUT "${ALLEN_GENERATED_INCLUDE_FILES_DIR}/AlgorithmDB.h"
-  COMMENT "Generating AlgorithmDB"
-  COMMAND ${CMAKE_COMMAND} -E env ${PARSER_ENV} ${Python_EXECUTABLE} ${ALGORITHMS_GENERATION_SCRIPT} --generate db --filename "${ALLEN_GENERATED_INCLUDE_FILES_DIR}/AlgorithmDB.h" --parsed_algorithms "${PARSED_ALGORITHMS_OUTPUTFILE}"
-  WORKING_DIRECTORY ${ALLEN_PARSER_DIR}
-  DEPENDS "${PARSED_ALGORITHMS_OUTPUTFILE}")
-add_custom_target(algorithm_db_generation DEPENDS "${ALLEN_GENERATED_INCLUDE_FILES_DIR}/AlgorithmDB.h")
-add_library(algorithm_db INTERFACE)
-add_dependencies(algorithm_db algorithm_db_generation "${ALLEN_GENERATED_INCLUDE_FILES_DIR}/AlgorithmDB.h")
-target_include_directories(algorithm_db INTERFACE $<BUILD_INTERFACE:${ALLEN_GENERATED_INCLUDE_FILES_DIR}>)
-install(TARGETS algorithm_db
-      EXPORT Allen
-      LIBRARY DESTINATION lib)
+# Target that the generation of the sequences can depend on
+add_custom_target(Sequences DEPENDS generate_algorithms_view)
 
 if(SEPARABLE_COMPILATION)
   add_custom_command(
@@ -158,13 +148,13 @@ elseif(STANDALONE)
     find_package(Git REQUIRED)
     file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/external/LHCb")
     set(LHCBROOT "${PROJECT_BINARY_DIR}/external/LHCb")
-    file(RELATIVE_PATH LHCBROOT_RELPATH ${PROJECT_SEQUENCE_DIR} ${LHCBROOT})
+    file(RELATIVE_PATH LHCBROOT_RELPATH ${PROJECT_SEQUENCE_DIR} ${LHCBROOT}) 
+
     add_custom_command(
       OUTPUT "${PROJECT_SEQUENCE_DIR}/PyConf"
       COMMENT "Checking out LHCb project from the LHCb stack"
       COMMAND
         ${CMAKE_COMMAND} -E env ${GIT_EXECUTABLE} clone https://gitlab.cern.ch/lhcb/LHCb.git ${PROJECT_BINARY_DIR}/external/LHCb &&
-        ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR}/external/LHCb patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/pyconf-pydot.patch &&
         ${CMAKE_COMMAND} -E create_symlink ${LHCBROOT_RELPATH}/PyConf/python/PyConf ${PROJECT_SEQUENCE_DIR}/PyConf)
     add_custom_target(checkout_lhcb DEPENDS "${PROJECT_SEQUENCE_DIR}/PyConf")
     message(STATUS "LHCBROOT set to ${LHCBROOT}")
@@ -194,6 +184,8 @@ elseif(STANDALONE)
   endif()
 endif()
 
+file(GLOB python_allen_conf "${PROJECT_SOURCE_DIR}/configuration/python/AllenConf/*py")
+file(GLOB python_allen_core "${PROJECT_SOURCE_DIR}/configuration/python/AllenCore/*py")
 function(generate_sequence sequence)
   set(sequence_dir ${PROJECT_SEQUENCE_DIR}/${sequence})
   file(MAKE_DIRECTORY ${sequence_dir})
@@ -204,7 +196,7 @@ function(generate_sequence sequence)
       COMMAND
         ${CMAKE_BINARY_DIR}/run bash ${sequence_dir}/generate_${sequence}.sh &&
         ${CMAKE_COMMAND} -E rename "${sequence_dir}/Sequence.json" "${PROJECT_BINARY_DIR}/${sequence}.json"
-      DEPENDS "${PROJECT_SOURCE_DIR}/configuration/python/AllenSequences/${sequence}.py" "${ALGORITHMS_OUTPUTFILE}"
+      DEPENDS "${PROJECT_SOURCE_DIR}/configuration/python/AllenSequences/${sequence}.py" "${ALGORITHMS_OUTPUTFILE}" ${python_allen_conf} ${python_allen_core}
       WORKING_DIRECTORY ${sequence_dir})
   else()
     add_custom_command(
@@ -212,10 +204,10 @@ function(generate_sequence sequence)
       COMMAND
         ${CMAKE_COMMAND} -E env "${LIBRARY_PATH_VARNAME}=$ENV{LD_LIBRARY_PATH}" "PYTHONPATH=${PROJECT_SEQUENCE_DIR}:$ENV{PYTHONPATH}" "${Python_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/configuration/python/AllenCore/gen_allen_json.py" "--seqpath" "${PROJECT_SOURCE_DIR}/configuration/python/AllenSequences/${sequence}.py" "--no-register-keys" &&
         ${CMAKE_COMMAND} -E rename "${sequence_dir}/Sequence.json" "${PROJECT_BINARY_DIR}/${sequence}.json"
-      DEPENDS "${PROJECT_SOURCE_DIR}/configuration/python/AllenSequences/${sequence}.py" "${ALGORITHMS_OUTPUTFILE}" "${PROJECT_SEQUENCE_DIR}/GaudiKernel" "${PROJECT_SEQUENCE_DIR}/PyConf"
+      DEPENDS "${PROJECT_SOURCE_DIR}/configuration/python/AllenSequences/${sequence}.py" "${ALGORITHMS_OUTPUTFILE}" "${PROJECT_SEQUENCE_DIR}/GaudiKernel" "${PROJECT_SEQUENCE_DIR}/PyConf" ${python_allen_conf} ${python_allen_core}
       WORKING_DIRECTORY ${sequence_dir})
   endif()
   add_custom_target(sequence_${sequence} DEPENDS "${PROJECT_BINARY_DIR}/${sequence}.json")
-  add_dependencies(Stream sequence_${sequence})
+  add_dependencies(Sequences sequence_${sequence})
   install(FILES "${PROJECT_BINARY_DIR}/${sequence}.json" DESTINATION constants)
 endfunction()

@@ -3,17 +3,17 @@
 ###############################################################################
 
 variables:
+  FF_ENABLE_JOB_CLEANUP: 1  # clean up directories on our custom runners
   GIT_SUBMODULE_STRATEGY: recursive
   TARGET_BRANCH: master
 
   ALLEN_DATA: "/scratch/allen_data"
 
-  LCG_VERSION: "LCG_101"
-
+  LCG_VERSION: "LCG_103"
   # LCG_PLATFORM = {LCG_SYSTEM}+{LCG_QUALIFIER}-{LCG_OPTIMIZATION}
-  LCG_SYSTEM: "x86_64_v3-centos7-clang12"
+  LCG_SYSTEM: "x86_64_v3-el9-gcc12"
   LCG_QUALIFIER: "cpu"
-  LCG_OPTIMIZATION: "opt"
+  LCG_OPTIMIZATION: "opt+g"
 
   LB_NIGHTLY_SLOT: lhcb-head
   NO_LBLOGIN: "1" # prevent lbdocker containers to start LbLogin/LbEnv

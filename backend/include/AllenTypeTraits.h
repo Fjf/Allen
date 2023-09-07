@@ -224,10 +224,32 @@ namespace Allen {
   };
 
   template<typename T, typename = void>
+  struct has_enable_tupling : std::false_type {
+  };
+  template<typename T>
+  struct has_enable_tupling<T, std::void_t<typename T::enable_tupling_t>> : std::true_type {
+  };
+
+  template<typename T, typename = void>
   struct has_monitoring_types : std::false_type {
   };
   template<typename T>
   struct has_monitoring_types<T, std::void_t<typename T::monitoring_types>> : std::true_type {
+  };
+
+  template<typename T1, typename = void>
+  struct monitoring_has_evtNo : std::false_type {
+  };
+
+  template<typename T1>
+  struct monitoring_has_evtNo<T1, std::void_t<typename T1::evtNo_t>> : std::true_type {
+  };
+
+  template<typename T1, typename = void>
+  struct monitoring_has_runNo : std::false_type {
+  };
+  template<typename T1>
+  struct monitoring_has_runNo<T1, std::void_t<typename T1::runNo_t>> : std::true_type {
   };
 
   template<typename T>
