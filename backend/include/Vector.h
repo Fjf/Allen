@@ -27,7 +27,7 @@
 #endif
 #endif
 
-#include "ume/simd/UMESimd.h"
+#include "umesimd/UMESimd.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
