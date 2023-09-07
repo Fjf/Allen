@@ -719,6 +719,7 @@ target_link_libraries(AllenLib
     Utils
     Validators
     Velo
+    Quantum
     VertexFitter
     mdf
     track_matching

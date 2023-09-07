@@ -39,7 +39,7 @@ namespace Allen {
   namespace device {
     namespace vector_backend {
       constexpr static unsigned long scalar = 0;
-      constexpr static unsigned long b128 = 1;gi
+      constexpr static unsigned long b128 = 1;
       constexpr static unsigned long b256 = 2;
       constexpr static unsigned long b512 = 3;
     } // namespace vector_backend
