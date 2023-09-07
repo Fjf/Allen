@@ -5,6 +5,7 @@
 #include <complex.h>
 #include "Python.h"
 #include "numpy/arrayobject.h"
+#include <bits/stdc++.h>
 
 #if defined(TARGET_DEVICE_CUDA)
 #include <cuComplex.h>
@@ -38,7 +39,7 @@ void quantum::quantum_t::operator()(
    */
   PyObject* module_name = PyUnicode_FromString("quantum_circuit");
   PyObject* module = PyImport_Import(module_name);
-  // TODO: Fix any errors imporitng not outputting erros here.
+  // TODO: Fix any errors importing not outputting errors here.
   if (!module) {
     std::cout << "quantum_circuit.py couldn't be imported. Ensure this file is in a directory findable by python. "
                  "(e.g., in your PYTHONPATH)"
@@ -54,8 +55,10 @@ void quantum::quantum_t::operator()(
   PyObject* result = PyList_New(0);
 
   const auto a = Allen::ArgumentOperations::make_host_buffer<dev_velo_cluster_container_t>(arguments, context);
-  const auto offsets_estimated_input_size = Allen::ArgumentOperations::make_host_buffer<dev_offsets_estimated_input_size_t>(arguments, context);
-  const auto module_cluster_num = Allen::ArgumentOperations::make_host_buffer<dev_module_cluster_num_t>(arguments, context);
+  const auto offsets_estimated_input_size =
+    Allen::ArgumentOperations::make_host_buffer<dev_offsets_estimated_input_size_t>(arguments, context);
+  const auto module_cluster_num =
+    Allen::ArgumentOperations::make_host_buffer<dev_module_cluster_num_t>(arguments, context);
 
   const auto velo_cluster_container =
     Velo::ConstClusters {a.data(), Allen::ArgumentOperations::first<host_total_number_of_velo_clusters_t>(arguments)};
@@ -111,39 +114,48 @@ void quantum::quantum_t::operator()(
   PyTuple_SetItem(func_args, 1, mcts_data);
 
   PyObject* func = PyDict_GetItemString(module_dict, (char*) "circuit");
-  std::cout << PyCallable_Check(func) << std::endl;
+
+  // Prepare return value storage.
+  npy_intp width, height;
+  PyArrayObject* np_ret;
+  long len_b;
+
   if (PyCallable_Check(func)) {
     printf("Calling python function\n");
-    PyObject* ret = PyObject_CallObject(func, func_args);
-    //    PyArrayObject* np_ret = reinterpret_cast<PyArrayObject*>(ret);
-    //    std::cout << np_ret << std::endl;
-    //    npy_intp width = PyArray_DIM(np_ret, 0);
-    //    npy_intp height = PyArray_DIM(np_ret, 1);
-    //    std::cout << "GOt matrix of size" << width << "x" << height << std::endl;
-    //    std::complex<double>* c_out = reinterpret_cast<std::complex<double>*>(PyArray_DATA(np_ret));
-    //    std::cout << c_out[0] << std::endl;
+    PyObject* return_tuple = PyObject_CallObject(func, func_args);
+    len_b = PyLong_AsLong(PyTuple_GetItem(return_tuple, 1));
+    np_ret = reinterpret_cast<PyArrayObject*>(PyTuple_GetItem(return_tuple, 0));
+    width = PyArray_DIM(np_ret, 0);
+    height = PyArray_DIM(np_ret, 1);
+  } else {
+    std::cout << "Python function returned error."
+              << std::endl;
+    PyErr_Print();
+    return;
   }
 #if defined(TARGET_DEVICE_CUDA)
-  const int nIndexBits = 3;
-  const int nSvSize = (1 << nIndexBits);
-  const int nTargets = 1;
-  const int nControls = 2;
+  const int nSvSize = height;
+  const int nIndexBits = log2(nSvSize);
+  const int nTargets = nIndexBits;
+  const int nControls = 0;
   const int adjoint = 0;
 
-  int targets[] = {2};
-  int controls[] = {0, 1};
+  // Create array to define all qubits as targets.
+  int* targets = (int*)malloc(height * sizeof(cuDoubleComplex));
+  for (int i = 0; i < nIndexBits; i++) targets[i] = i;
+  int controls[] = {};
 
-  cuDoubleComplex h_sv[] = {
-    {0.0, 0.0}, {0.0, 0.1}, {0.1, 0.1}, {0.1, 0.2}, {0.2, 0.2}, {0.3, 0.3}, {0.3, 0.4}, {0.4, 0.5}};
-  cuDoubleComplex h_sv_result[] = {
-    {0.0, 0.0}, {0.0, 0.1}, {0.1, 0.1}, {0.4, 0.5}, {0.2, 0.2}, {0.3, 0.3}, {0.3, 0.4}, {0.1, 0.2}};
+  // Initialize zero-initialized array of doubles with the first real element set to 1 as statevector.
+  cuDoubleComplex* h_sv = (cuDoubleComplex*)calloc(nSvSize, sizeof(cuDoubleComplex));
+  h_sv[0].x = 1;
 
-  cuDoubleComplex matrix[] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}, {0.0, 0.0}};
-
+  // Copy data to device.
   cuDoubleComplex* d_sv;
   cudaMalloc((void**) &d_sv, nSvSize * sizeof(cuDoubleComplex));
-
   cudaMemcpy(d_sv, h_sv, nSvSize * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice);
+
+  // Convert data to cuDoubleComplex
+  cuDoubleComplex* matrix = reinterpret_cast<cuDoubleComplex*>(PyArray_DATA(np_ret));
 
   //--------------------------------------------------------------------------
 
@@ -198,18 +210,39 @@ void quantum::quantum_t::operator()(
 
   cudaMemcpy(h_sv, d_sv, nSvSize * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost);
 
-  bool correct = true;
-  for (int i = 0; i < nSvSize; i++) {
-    if ((h_sv[i].x != h_sv_result[i].x) || (h_sv[i].y != h_sv_result[i].y)) {
-      correct = false;
-      break;
-    }
+  int post_select_qubit = int(log2(float(nSvSize)) - 1.0);
+  int solution_length = len_b;
+  int base = 1 << post_select_qubit;
+  std::vector<double> solution_vector;
+
+  double euclidian_sum;
+  for (int i = nSvSize / 2; i < nSvSize; i++) {
+    // Compute euclidian sum
+    cuDoubleComplex a =  h_sv[i];
+    euclidian_sum += (a.x * a.x) + (a.y * a.y);  // Sum of real^2 + imag^2
+  }
+  euclidian_sum = std::sqrt(euclidian_sum);
+
+  double sum;
+  for (int i = 0; i < solution_length; i++) {
+    // Create solution vector subset
+    cuDoubleComplex a =  h_sv[i + base];
+    solution_vector.push_back(a.x);
+
+    sum += a.x * a.x;  // Sum of real parts of sol_vector
+  }
+  sum = std::sqrt(sum);
+
+
+  // The rest
+  for (int i = 0; i < solution_vector.size(); i++) {
+    float magic_value = 2.; // TODO: This is the lowest eigen value from A, we should calculate this in a smart way
+    solution_vector[i] = (solution_vector[i] / sum) * euclidian_sum * std::sqrt(float(len_b)) / magic_value;
+    std::cout << solution_vector[i] << ",";
   }
 
-  if (correct)
-    printf("example PASSED\n");
-  else
-    printf("example FAILED: wrong result\n");
+  std::cout << std::endl;
+
 
   cudaFree(d_sv);
   if (extraWorkspaceSizeInBytes) cudaFree(extraWorkspace);

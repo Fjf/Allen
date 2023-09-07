@@ -15,9 +15,15 @@ allen_add_device_library(Quantum SHARED
         ${quantum_sources}
         )
 
+
+
 find_package(Python COMPONENTS Interpreter Development)
 
 if ("${TARGET_DEVICE}" STREQUAL "CUDA")
+    set(CUQUANTUM_ROOT_DIR "" CACHE STRING "Where to find the cuQuantum installation")
+    include_directories(${CUQUANTUM_ROOT_DIR}/include)
+    link_directories(${CUQUANTUM_ROOT_DIR}/lib)
+
     target_link_libraries(Quantum PRIVATE -lcustatevec)
 endif()
 target_link_libraries(Quantum PRIVATE ${Python_LIBRARIES})
