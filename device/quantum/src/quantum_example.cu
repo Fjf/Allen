@@ -4,8 +4,11 @@
 #include "quantum_example.cuh"
 #include <complex.h>
 #include "Python.h"
-#include "numpy/arrayobject.h"
 #include <bits/stdc++.h>
+
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include "numpy/arrayobject.h"
+
 
 #if defined(TARGET_DEVICE_CUDA)
 #include <cuComplex.h>
@@ -62,7 +65,6 @@ void quantum::quantum_t::operator()(
 
   const auto velo_cluster_container =
     Velo::ConstClusters {a.data(), Allen::ArgumentOperations::first<host_total_number_of_velo_clusters_t>(arguments)};
-  std::cout << "Building hit list" << std::endl;
   for (unsigned event_number = 0; event_number < Allen::ArgumentOperations::first<host_number_of_events_t>(arguments);
        ++event_number) {
     const auto event_number_of_hits =
@@ -92,7 +94,6 @@ void quantum::quantum_t::operator()(
   /*
    * Set MCTS data
    */
-  std::cout << "MCTS  list" << std::endl;
   PyObject* mcts_data = PyList_New(0);
   const auto mc_data = *first<host_mc_events_t>(arguments);
   for (const auto& event : mc_data) {
@@ -108,7 +109,6 @@ void quantum::quantum_t::operator()(
   /*
    * Prepare function arguments
    */
-  std::cout << "Building function argument list" << std::endl;
   PyObject* func_args = PyTuple_New(2);
   PyTuple_SetItem(func_args, 0, result);
   PyTuple_SetItem(func_args, 1, mcts_data);
@@ -116,16 +116,18 @@ void quantum::quantum_t::operator()(
   PyObject* func = PyDict_GetItemString(module_dict, (char*) "circuit");
 
   // Prepare return value storage.
-  npy_intp width, height;
+  npy_intp height;
   PyArrayObject* np_ret;
   long len_b;
 
   if (PyCallable_Check(func)) {
-    printf("Calling python function\n");
     PyObject* return_tuple = PyObject_CallObject(func, func_args);
+    if (return_tuple == NULL) {
+      PyErr_Print();
+      return;
+    }
     len_b = PyLong_AsLong(PyTuple_GetItem(return_tuple, 1));
     np_ret = reinterpret_cast<PyArrayObject*>(PyTuple_GetItem(return_tuple, 0));
-    width = PyArray_DIM(np_ret, 0);
     height = PyArray_DIM(np_ret, 1);
   } else {
     std::cout << "Python function returned error."
